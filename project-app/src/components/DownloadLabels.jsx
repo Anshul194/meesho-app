@@ -31,6 +31,16 @@ export default function DownloadLabels() {
   const [open, setOpen] = React.useState(false);
   const [snack, setSnack] = React.useState("");
   const [snackType, setSnackType] = React.useState("success");
+  const [marketPlace, setMarketPlace] = useState("");
+  const marketPlaceOptions = [
+    { value: "Meesho", label: "Meesho" },
+    { value: "Amazon", label: "Amazon" },
+    { value: "Flipkart", label: "Flipkart" },
+    { value: "Snapdeal", label: "Snapdeal" },
+    { value: "Glowroad", label: "Glowroad" },
+    { value: "Shopify", label: "Shopify" },
+    { value: "Others", label: "Others" },
+  ];
 
   const handleClick = () => {
     setOpen(true);
@@ -61,7 +71,7 @@ export default function DownloadLabels() {
       }
 
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/clients/labels/all?clientId=${selectedClient}&page=${page}&limit=${rowsPerPage}&from=${startDate}&to=${endDate}`,
+        `${API_ENDPOINT}/api/v1/clients/labels/all?clientId=${selectedClient}&page=${page}&limit=${rowsPerPage}&from=${startDate}&to=${endDate}&marketPlace=${marketPlace || ""}`,
         {
           headers: {
             "x-access-token": token,
@@ -85,7 +95,7 @@ export default function DownloadLabels() {
   useEffect(() => {
     fetchClients();
     fetchOrders();
-  }, [page, rowsPerPage, selectedClient]);
+  }, [page, rowsPerPage, selectedClient, marketPlace]);
 
   const fetchClients = async () => {
     try {
@@ -254,6 +264,18 @@ export default function DownloadLabels() {
                   }}
                   // value={selectedClient}
                   placeholder="Select a client..."
+                />
+              </div>
+              <div className="col-sm-4">
+                <Select
+                  options={marketPlaceOptions}
+                  isClearable
+                  value={marketPlace ? { value: marketPlace, label: marketPlace } : null}
+                  onChange={(selected) => {
+                    setMarketPlace(selected ? selected.value : "");
+                    setPage(1);
+                  }}
+                  placeholder="Select Marketplace"
                 />
               </div>
             </div>

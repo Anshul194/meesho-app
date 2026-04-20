@@ -285,6 +285,7 @@ const uploadManifest = async (req, res) => {
       client,
       filePath,
       fileName,
+      marketPlace: req.body.marketPlace || req.body.marketplace,
     });
 
     await newManifest.save();
@@ -302,34 +303,27 @@ const getAllManifest = async (req, res) => {
     // Extract query parameters for filtering
     const { clientId, page, limit, from, to } = req.query;
 
-    // Construct filter object
     const filter = {};
 
-    const conditionArray = [];
-
     if (clientId) {
-      conditionArray.push({ client: clientId });
+      filter.client = clientId;
+    }
+
+    if (req.query.marketPlace) {
+      filter.marketPlace = {
+        $regex: new RegExp(req.query.marketPlace, "i"),
+      };
     }
 
     if (from && to) {
-      // Convert 'from' and 'to' strings to Date objects
       const fromDate = new Date(from);
       const toDate = new Date(to);
-
       toDate.setDate(toDate.getDate() + 1);
 
-      // Add date range filter
-      conditionArray.push({
-        createdAt: {
-          $gte: fromDate,
-          $lte: toDate,
-        },
-      });
-    }
-
-    // Combine conditions using $and operator
-    if (conditionArray.length > 0) {
-      filter.$and = conditionArray;
+      filter.createdAt = {
+        $gte: fromDate,
+        $lte: toDate,
+      };
     }
 
     // Pagination parameters
@@ -422,6 +416,7 @@ const uploadLabels = async (req, res) => {
       client,
       filePath,
       fileName,
+      marketPlace: req.body.marketPlace || req.body.marketplace,
     });
 
     await newLabel.save();
@@ -439,35 +434,27 @@ const getAllLabels = async (req, res) => {
     // Extract query parameters for filtering
     const { clientId, page, limit, from, to } = req.query;
 
-    // Construct filter object
-    // Construct filter object
     const filter = {};
 
-    const conditionArray = [];
-
     if (clientId) {
-      conditionArray.push({ client: clientId });
+      filter.client = clientId;
+    }
+
+    if (req.query.marketPlace) {
+      filter.marketPlace = {
+        $regex: new RegExp(req.query.marketPlace, "i"),
+      };
     }
 
     if (from && to) {
-      // Convert 'from' and 'to' strings to Date objects
       const fromDate = new Date(from);
       const toDate = new Date(to);
-
       toDate.setDate(toDate.getDate() + 1);
 
-      // Add date range filter
-      conditionArray.push({
-        createdAt: {
-          $gte: fromDate,
-          $lte: toDate,
-        },
-      });
-    }
-
-    // Combine conditions using $and operator
-    if (conditionArray.length > 0) {
-      filter.$and = conditionArray;
+      filter.createdAt = {
+        $gte: fromDate,
+        $lte: toDate,
+      };
     }
 
     // Pagination parameters

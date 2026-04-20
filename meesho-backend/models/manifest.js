@@ -11,6 +11,9 @@ const manifestSchema = new mongoose.Schema(
     filePath: {
       type: String,
     },
+    marketPlace: {
+      type: String,
+    },
     isDownloaded: {
       type: Boolean,
       default: false,

@@ -61,6 +61,16 @@ export default function Dorder() {
   const [snackOpen, setSnackOpen] = React.useState(false);
   const [snack, setSnack] = React.useState("");
   const [snackType, setSnackType] = React.useState("success");
+  const [marketPlace, setMarketPlace] = useState("");
+  const marketPlaceOptions = [
+    { value: "Meesho", label: "Meesho" },
+    { value: "Amazon", label: "Amazon" },
+    { value: "Flipkart", label: "Flipkart" },
+    { value: "Snapdeal", label: "Snapdeal" },
+    { value: "Glowroad", label: "Glowroad" },
+    { value: "Shopify", label: "Shopify" },
+    { value: "Others", label: "Others" },
+  ];
 
   const [open2, setOpen2] = React.useState(false);
 
@@ -123,10 +133,20 @@ export default function Dorder() {
         throw new Error("Token not found in localStorage");
       }
 
+      const queryParams = [
+        `clientId=${selectedClient || ""}`,
+        `orderNumber=${searchValue}`,
+        `page=${page}`,
+        `limit=${rowsPerPage}`,
+        `from=${startDate}`,
+        `to=${endDate}`,
+        `isLableDownloaded=true`,
+      ];
+
+      if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${
-          selectedClient || ""
-        }&orderNumber=${searchValue}&page=${page}&limit=${rowsPerPage}&from=${startDate}&to=${endDate}&isLableDownloaded=true`,
+        `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
         {
           headers: {
             "x-access-token": token,
@@ -150,7 +170,7 @@ export default function Dorder() {
   useEffect(() => {
     fetchOrders();
     fetchClients();
-  }, [selectedClient, page, rowsPerPage]);
+  }, [selectedClient, page, rowsPerPage, marketPlace]);
 
   // const handleFilter = (status) => {
   //   const selectedOrders = orders.filter((order) => order.selected);
@@ -271,6 +291,15 @@ export default function Dorder() {
 
   const handleSearchValueChange = (event) => {
     setSearchValue(event.target.value);
+  };
+
+  const handleMarketPlaceChange = (selected) => {
+    if (selected) {
+      setMarketPlace(selected.value);
+    } else {
+      setMarketPlace("");
+    }
+    setPage(1); // Reset to first page on filter change
   };
 
   const applyDateFilter = () => {
@@ -532,6 +561,15 @@ export default function Dorder() {
         <div className="card">
           <div className="header">
             <div className="row">
+              <div className="col-sm-3" style={{ marginTop: "8px" }}>
+                <Select
+                  options={marketPlaceOptions}
+                  isClearable
+                  value={marketPlace ? { value: marketPlace, label: marketPlace } : null}
+                  onChange={handleMarketPlaceChange}
+                  placeholder="Select Marketplace"
+                />
+              </div>
               <div className="col-sm-6">
                 <Select
                   options={clients.map((client) => ({

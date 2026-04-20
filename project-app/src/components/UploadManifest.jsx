@@ -10,6 +10,16 @@ const UploadManifest = () => {
   const [snackType, setSnackType] = React.useState("success");
   const [loaderOpen, setLoaderOpen] = React.useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [marketPlace, setMarketPlace] = useState("");
+  const marketPlaceOptions = [
+    { value: "Meesho", label: "Meesho" },
+    { value: "Amazon", label: "Amazon" },
+    { value: "Flipkart", label: "Flipkart" },
+    { value: "Snapdeal", label: "Snapdeal" },
+    { value: "Glowroad", label: "Glowroad" },
+    { value: "Shopify", label: "Shopify" },
+    { value: "Others", label: "Others" },
+  ];
 
   const handleClick = () => {
     setOpen(true);
@@ -27,6 +37,12 @@ const UploadManifest = () => {
     event.preventDefault();
     if (!file) {
       setSnack("Please select a file to upload.");
+      setSnackType("error");
+      handleClick();
+      return;
+    }
+    if (!marketPlace) {
+      setSnack("Please select a marketplace.");
       setSnackType("error");
       handleClick();
       return;
@@ -64,6 +80,7 @@ const UploadManifest = () => {
     try {
       const formData = new FormData();
       formData.append("clientId", clientId);
+      formData.append("marketPlace", marketPlace);
       formData.append("manifest", file);
 
       // Send a POST request to the API endpoint with token authentication
@@ -112,6 +129,21 @@ const UploadManifest = () => {
             <h4 className="head01 mt-3 mb-4">Upload Manifest</h4>
 
             <form onSubmit={handleSubmit}>
+              <div className="form-group col-md-4 mb-3">
+                <label className="amount">Select Marketplace</label>
+                <select
+                  className="form-control"
+                  value={marketPlace}
+                  onChange={(e) => setMarketPlace(e.target.value)}
+                >
+                  <option value="">Select Marketplace</option>
+                  {marketPlaceOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="form-group">
                 <label htmlFor="exampleFormControlFile1" className="amount">
                   Upload Manifest File (PDF only)

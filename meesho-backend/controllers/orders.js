@@ -244,6 +244,7 @@ const getAllOrders = async (req, res) => {
       ];
     }
 
+
     if (orderNumber) {
       filter.$and = filter.$and || [];
       filter.$and.push({
@@ -251,6 +252,17 @@ const getAllOrders = async (req, res) => {
           { marketPlaceOrderNumber: new RegExp(orderNumber) },
           { "orders.marketPlaceOrderNumber": new RegExp(orderNumber) },
         ],
+      });
+    }
+
+    // Add marketPlace filter if present
+    if (req.query.marketPlace) {
+      filter.$and = filter.$and || [];
+      filter.$and.push({
+        $or: [
+          { marketPlace: { $regex: new RegExp(req.query.marketPlace, "i") } },
+          { "orders.marketPlace": { $regex: new RegExp(req.query.marketPlace, "i") } }
+        ]
       });
     }
 
@@ -308,7 +320,7 @@ const getAllOrders = async (req, res) => {
 
     // Count total number of orders (for pagination)
     const totalOrders = await Order.countDocuments(filter);
-    
+
     // Return the list of orders
     res.status(200).json({
       message: "Orders retrieved successfully",
@@ -327,7 +339,8 @@ const getAllOrders = async (req, res) => {
 const uploadBulkOrder = async (req, res) => {
   try {
     const file = req.file;
-    const clientId = req.body.clientId;
+    const { clientId, marketPlace, marketplace } = req.body;
+    const finalMarketPlace = marketPlace || marketplace;
 
     if (!clientId) {
       return res.status(400).json({
@@ -468,9 +481,8 @@ const uploadBulkOrder = async (req, res) => {
       const product = await Product.findOne({ productSKU });
       if (!product) {
         return res.status(404).json({
-          message: `Product with SKU ${productSKU} in row ${
-            i + 1
-          } not found in database.`,
+          message: `Product with SKU ${productSKU} in row ${i + 1
+            } not found in database.`,
           success: false,
         });
       }
@@ -529,7 +541,7 @@ const uploadBulkOrder = async (req, res) => {
       orderArr.push(myOrder);
 
       const orderDoc = new Order({
-        // marketPlace: marketPlace,
+        marketPlace: finalMarketPlace,
         // labelPath: labelPath,
         // labelName: labelName,
         orders: orderArr,

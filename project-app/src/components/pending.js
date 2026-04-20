@@ -52,6 +52,16 @@ export default function Pending() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [searchValue, setSearchValue] = useState("");
+  const [marketPlace, setMarketPlace] = useState("");
+  const marketPlaceOptions = [
+    { value: "Meesho", label: "Meesho" },
+    { value: "Amazon", label: "Amazon" },
+    { value: "Flipkart", label: "Flipkart" },
+    { value: "Snapdeal", label: "Snapdeal" },
+    { value: "Glowroad", label: "Glowroad" },
+    { value: "Shopify", label: "Shopify" },
+    { value: "Others", label: "Others" },
+  ];
   const [totalDocs, setTotalDocs] = useState(null);
   const [open, setOpen] = React.useState(false);
   const [open2, setOpen2] = React.useState(false);
@@ -110,10 +120,19 @@ export default function Pending() {
       }
       // plus 1 day in this data endDate
 
+      const queryParams = [
+        `clientId=${selectedClient || ""}`,
+        `orderNumber=${searchValue}`,
+        `page=${page}`,
+        `limit=${rowsPerPage}`,
+        `from=${startDate}`,
+        `to=${endDate}`,
+        `isLableDownloaded=false`,
+        `status=pending`
+      ];
+      if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${
-          selectedClient || ""
-        }&orderNumber=${searchValue}&page=${page}&limit=${rowsPerPage}&from=${startDate}&to=${endDate}&isLableDownloaded=false&status=pending`,
+        `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
         {
           headers: {
             "x-access-token": token,
@@ -161,7 +180,7 @@ export default function Pending() {
   useEffect(() => {
     fetchOrders();
     fetchClients();
-  }, [selectedClient, page, rowsPerPage]);
+  }, [selectedClient, page, rowsPerPage, marketPlace]);
 
   const applyDateFilter = () => {
     fetchOrders();
@@ -194,6 +213,14 @@ export default function Pending() {
 
   const handleSearchValueChange = (event) => {
     setSearchValue(event.target.value);
+  };
+  const handleMarketPlaceChange = (selected) => {
+    if (selected) {
+      setMarketPlace(selected.value);
+    } else {
+      setMarketPlace("");
+    }
+    setPage(1); // Reset to first page on filter change
   };
 
   const handleExport = async () => {
@@ -400,6 +427,17 @@ export default function Pending() {
       <div className="container-fluid">
         <div className="card">
           <div className="header">
+            <div className="row">
+              <div className="col-sm-3" style={{ marginTop: "8px" }}>
+                <Select
+                  options={marketPlaceOptions}
+                  isClearable
+                  value={marketPlace ? { value: marketPlace, label: marketPlace } : null}
+                  onChange={handleMarketPlaceChange}
+                  placeholder="Select Marketplace"
+                />
+              </div>
+            </div>
             <div
               className="row"
               style={{

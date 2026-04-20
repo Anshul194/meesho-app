@@ -6,12 +6,24 @@ import {
   CircularProgress,
   MenuItem,
   Pagination,
-  Select,
+  Select as MUISelect,
   Snackbar,
 } from "@mui/material";
 import { exportToExcel } from "../util/util";
 
+import Select from "react-select";
+
 const OrderHistory = () => {
+  const [marketPlace, setMarketPlace] = useState("");
+  const marketPlaceOptions = [
+    { value: "Meesho", label: "Meesho" },
+    { value: "Amazon", label: "Amazon" },
+    { value: "Flipkart", label: "Flipkart" },
+    { value: "Snapdeal", label: "Snapdeal" },
+    { value: "Glowroad", label: "Glowroad" },
+    { value: "Shopify", label: "Shopify" },
+    { value: "Others", label: "Others" },
+  ];
   const [orders, setOrders] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -56,10 +68,20 @@ const OrderHistory = () => {
         throw new Error("Token or clientId not found in localStorage");
       }
 
+      const queryParams = [
+        `clientId=${clientId || ""}`,
+        `orderNumber=${searchValue}`,
+        `page=${page}`,
+        `limit=${rowsPerPage}`,
+        `from=${startDate}`,
+        `to=${endDate}`,
+      ];
+
+      if (marketPlace)
+        queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${
-          clientId || ""
-        }&orderNumber=${searchValue}&page=${page}&limit=${rowsPerPage}&from=${startDate}&to=${endDate}`,
+        `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
         {
           headers: {
             "x-access-token": token,
@@ -85,7 +107,7 @@ const OrderHistory = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, marketPlace]);
 
   const handleFileChange = (event, orderId) => {
     const file = event.target.files[0];
@@ -161,6 +183,15 @@ const OrderHistory = () => {
   };
   const applyDateFilter = () => {
     fetchOrders();
+  };
+
+  const handleMarketPlaceChange = (selected) => {
+    if (selected) {
+      setMarketPlace(selected.value);
+    } else {
+      setMarketPlace("");
+    }
+    setPage(1); // Reset to first page on filter change
   };
 
   const handleExport = async () => {
@@ -252,6 +283,21 @@ const OrderHistory = () => {
       <div className="container-fluid">
         <div className="card">
           <div className="header">
+            <div className="row">
+              <div className="col-sm-3" style={{ marginTop: "8px", marginBottom: "8px" }}>
+                <Select
+                  options={marketPlaceOptions}
+                  isClearable
+                  value={
+                    marketPlace
+                      ? { value: marketPlace, label: marketPlace }
+                      : null
+                  }
+                  onChange={handleMarketPlaceChange}
+                  placeholder="Select Marketplace"
+                />
+              </div>
+            </div>
             <div className="row">
               <div className="col-sm-6">
                 <label>Start Date</label>
@@ -590,11 +636,11 @@ const OrderHistory = () => {
                 page={page}
                 onChange={handlePageChange}
               />
-              <Select value={rowsPerPage} onChange={handleRowsPerPageChange}>
+              <MUISelect value={rowsPerPage} onChange={handleRowsPerPageChange}>
                 <MenuItem value={10}>10</MenuItem>
                 <MenuItem value={20}>20</MenuItem>
                 <MenuItem value={50}>50</MenuItem>
-              </Select>
+              </MUISelect>
             </div>
           </div>
           <Snackbar open={open} autoHideDuration={10000} onClose={handleClose}>

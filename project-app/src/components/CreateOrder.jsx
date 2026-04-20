@@ -115,8 +115,9 @@ const CreateOrder = () => {
       }
 
       const formData = new FormData();
-      formData.append("bulkOrder", bulkOrderFile);
       formData.append("clientId", clientId);
+      formData.append("marketPlace", marketPlace);
+      formData.append("bulkOrder", bulkOrderFile);
 
       const requestOptions = {
         method: "POST",
@@ -654,9 +655,9 @@ const CreateOrder = () => {
                         value={
                           products[index].productSKU
                             ? {
-                                label: products[index].productSKU,
-                                value: products[index].productSKU,
-                              }
+                              label: products[index].productSKU,
+                              value: products[index].productSKU,
+                            }
                             : null
                         }
                         onChange={(selected) =>
@@ -749,18 +750,18 @@ const CreateOrder = () => {
                         const selectedMethod = shippingMethods.find(m => m.name === selectedShippingMethod);
                         return selectedMethod && selectedMethod._id === "69e60bc22e8678f757162c5f";
                       })() && (
-                        <div className="col-sm-6">
-                          <div className="form-group">
-                            <label>Upload Label (PDF)</label>
-                            <input
-                              type="file"
-                              accept=".pdf"
-                              className="form-control"
-                              onChange={e => setOwnLabel(e.target.files[0])}
-                            />
+                          <div className="col-sm-6">
+                            <div className="form-group">
+                              <label>Upload Label (PDF)</label>
+                              <input
+                                type="file"
+                                accept=".pdf"
+                                className="form-control"
+                                onChange={e => setOwnLabel(e.target.files[0])}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                       {shippingCharge > 0 && (
                         <div className="col-sm-6">
                           <div className="form-group mt-2">
