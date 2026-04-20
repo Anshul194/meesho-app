@@ -805,16 +805,32 @@ const updateOrdersStatus = async (req, res) => {
             });
           }
 
-          if (
-            status === "Cancelled" ||
-            status === "Right RTO Return" ||
-            status === "Right Customer Return"
-          ) {
-            client.walletBalance +=
-              orderDoc.totalPrice - orderDoc.packingCharge;
-            amount_credit = orderDoc.totalPrice - orderDoc.packingCharge;
-            amount_debit = 0;
+          const targetShippingMethodId = "69e60bb32e8678f757162c5c";
+          const currentShippingMethod = orderDoc.shippingMethod;
+          const currentShippingCharge = orderDoc.shippingCharge || 0;
+          const currentPackingCharge = orderDoc.packingCharge || 0;
+          const currentTotalPrice = orderDoc.totalPrice;
+
+          if (status === "Cancelled") {
+            if (currentShippingMethod === targetShippingMethodId) {
+              amount_credit = currentTotalPrice;
+            } else {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            }
+          } else if (status === "Right RTO Return" || status === "Right Customer Return") {
+            if (currentShippingMethod === targetShippingMethodId) {
+              amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
+            } else {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            }
+          } else {
+            amount_credit = 0;
           }
+
+          if (amount_credit > 0) {
+            client.walletBalance += amount_credit;
+          }
+          amount_debit = 0;
 
           await client.save();
 
@@ -879,21 +895,34 @@ const updateOrdersStatus = async (req, res) => {
               await new_order.save();
 
               let walletBalance = 0;
-              if (
-                status === "Right RTO Return" ||
-                status === "Right Customer Return" ||
-                status === "Cancelled"
-              ) {
-                client.walletBalance +=
-                  orderDoc.orders[j].totalPrice -
-                  orderDoc.orders[j].packingCharge;
-                amount_credit =
-                  orderDoc.orders[j].totalPrice -
-                  orderDoc.orders[j].packingCharge;
-                amount_debit = 0;
+              let amount_credit = 0;
+              const targetShippingMethodId = "69e60bb32e8678f757162c5c";
+              const currentShippingMethod = orderDoc.orders[j].shippingMethod;
+              const currentShippingCharge = orderDoc.orders[j].shippingCharge || 0;
+              const currentPackingCharge = orderDoc.orders[j].packingCharge || 0;
+              const currentTotalPrice = orderDoc.orders[j].totalPrice;
 
+              if (status === "Cancelled") {
+                if (currentShippingMethod === targetShippingMethodId) {
+                  amount_credit = currentTotalPrice;
+                } else {
+                  amount_credit = currentTotalPrice - currentPackingCharge;
+                }
+              } else if (status === "Right RTO Return" || status === "Right Customer Return") {
+                if (currentShippingMethod === targetShippingMethodId) {
+                  amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
+                } else {
+                  amount_credit = currentTotalPrice - currentPackingCharge;
+                }
+              } else {
+                amount_credit = 0;
+              }
+
+              if (amount_credit > 0) {
+                client.walletBalance += amount_credit;
                 await client.save();
               }
+              amount_debit = 0;
               walletBalance = client.walletBalance;
 
               const newTransaction = new Transaction({
@@ -1231,15 +1260,32 @@ const updateOrdersStatusFromExcel = async (req, res) => {
             });
           }
 
-          if (
-            status_to_update === "Cancelled" ||
-            status_to_update === "Right RTO Return" ||
-            status_to_update === "Right Customer Return"
-          ) {
-            client.walletBalance += order.totalPrice - order.packingCharge;
-            amount_credit = order.totalPrice - order.packingCharge;
-            amount_debit = 0;
+          const targetShippingMethodId = "69e60bb32e8678f757162c5c";
+          const currentShippingMethod = order.shippingMethod;
+          const currentShippingCharge = order.shippingCharge || 0;
+          const currentPackingCharge = order.packingCharge || 0;
+          const currentTotalPrice = order.totalPrice;
+
+          if (status_to_update === "Cancelled") {
+            if (currentShippingMethod === targetShippingMethodId) {
+              amount_credit = currentTotalPrice;
+            } else {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            }
+          } else if (status_to_update === "Right RTO Return" || status_to_update === "Right Customer Return") {
+            if (currentShippingMethod === targetShippingMethodId) {
+              amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
+            } else {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            }
+          } else {
+            amount_credit = 0;
           }
+
+          if (amount_credit > 0) {
+            client.walletBalance += amount_credit;
+          }
+          amount_debit = 0;
 
           await client.save();
 
@@ -1309,21 +1355,34 @@ const updateOrdersStatusFromExcel = async (req, res) => {
                   await new_order.save();
 
                   let walletBalance = 0;
-                  if (
-                    status_to_update === "Right RTO Return" ||
-                    status_to_update === "Right Customer Return" ||
-                    status_to_update === "Cancelled"
-                  ) {
-                    client.walletBalance +=
-                      order.orders[j].totalPrice -
-                      order.orders[j].packingCharge;
-                    amount_credit =
-                      order.orders[j].totalPrice -
-                      order.orders[j].packingCharge;
-                    amount_debit = 0;
+                  let amount_credit = 0;
+                  const targetShippingMethodId = "69e60bb32e8678f757162c5c";
+                  const currentShippingMethod = order.orders[j].shippingMethod;
+                  const currentShippingCharge = order.orders[j].shippingCharge || 0;
+                  const currentPackingCharge = order.orders[j].packingCharge || 0;
+                  const currentTotalPrice = order.orders[j].totalPrice;
 
+                  if (status_to_update === "Right RTO Return" || status_to_update === "Right Customer Return") {
+                    if (currentShippingMethod === targetShippingMethodId) {
+                      amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
+                    } else {
+                      amount_credit = currentTotalPrice - currentPackingCharge;
+                    }
+                  } else if (status_to_update === "Cancelled") {
+                    if (currentShippingMethod === targetShippingMethodId) {
+                      amount_credit = currentTotalPrice;
+                    } else {
+                      amount_credit = currentTotalPrice - currentPackingCharge;
+                    }
+                  } else {
+                    amount_credit = 0;
+                  }
+
+                  if (amount_credit > 0) {
+                    client.walletBalance += amount_credit;
                     await client.save();
                   }
+                  amount_debit = 0;
                   walletBalance = client.walletBalance;
 
                   const newTransaction = new Transaction({

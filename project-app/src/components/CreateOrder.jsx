@@ -462,7 +462,7 @@ const CreateOrder = () => {
       formData.append("marketPlace", marketPlace);
       formData.append("clientId", clientId);
       // Attach label only if required by selected shipping method
-      let selectedMethodObj = shippingMethods.find(m => m.name === selectedShippingMethod);
+      let selectedMethodObj = shippingMethods.find(m => m._id === selectedShippingMethod);
       if (marketPlace !== "Meesho" && selectedMethodObj && selectedMethodObj._id === "69e60bc22e8678f757162c5f") {
         formData.append("label", ownLabel);
       } else {
@@ -734,20 +734,20 @@ const CreateOrder = () => {
                             value={selectedShippingMethod || ""}
                             onChange={e => {
                               setSelectedShippingMethod(e.target.value);
-                              const method = shippingMethods.find(m => m.name === e.target.value);
+                              const method = shippingMethods.find(m => m._id === e.target.value);
                               setShippingCharge(method ? method.charge : 0);
                             }}
                           >
                             <option value="">Select Shipping Method</option>
                             {shippingMethods.map((m) => (
-                              <option key={m._id} value={m.name}>{m.name}</option>
+                              <option key={m._id} value={m._id}>{m.name}</option>
                             ))}
                           </select>
                         </div>
                       </div>
                       {/* Only show label upload if selected shipping method is the one with id 69e60bc22e8678f757162c5f */}
                       {(() => {
-                        const selectedMethod = shippingMethods.find(m => m.name === selectedShippingMethod);
+                        const selectedMethod = shippingMethods.find(m => m._id === selectedShippingMethod);
                         return selectedMethod && selectedMethod._id === "69e60bc22e8678f757162c5f";
                       })() && (
                           <div className="col-sm-6">
