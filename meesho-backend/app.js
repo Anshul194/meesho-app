@@ -5,6 +5,7 @@ const cors = require("cors");
 const products = require("./routes/products");
 const clients = require("./routes/clients");
 const orders = require("./routes/orders");
+const shippingMethod = require("./routes/shippingMethod");
 const users = require("./routes/users");
 const transactions = require("./routes/transactions");
 const connectDB = require("./db/connect");
@@ -28,6 +29,7 @@ app.use(express.json());
 app.use("/api/v1/products", products);
 app.use("/api/v1/clients", clients);
 app.use("/api/v1/orders", orders);
+app.use("/api/v1/shipping-methods", shippingMethod);
 app.use("/api/v1/users", users);
 app.use("/api/v1/transactions", transactions);
 

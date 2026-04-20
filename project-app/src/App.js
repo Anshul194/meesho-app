@@ -31,6 +31,7 @@ import CreateOrder from "./components/CreateOrder";
 import UploadManifest from "./components/UploadManifest";
 import WalletHistory from "./components/WalletHistory";
 import React, { useEffect, useState } from "react";
+import ShippingMethods from "./components/ShippingMethods";
 import { Box, Drawer, List, ListItem } from "@mui/material";
 import DownloadLabels from "./components/DownloadLabels";
 import UploadLabels from "./components/UploadLabels";
@@ -233,17 +234,25 @@ function App() {
                 </li>
               )}
               {user && user === "admin" && (
-                <li>
-                  <a href="#charts" className="has-arrow">
-                    <i className="fa fa-area-chart pr-3"></i>
-                    <span>Portal Clients</span>
-                  </a>
-                  <ul>
-                    <li className={urlSegment === "Clients" ? "active" : ""}>
-                      <Link to="/Clients">Clients List</Link>{" "}
-                    </li>
-                  </ul>
-                </li>
+                <>
+                  <li>
+                    <Link to="/ShippingMethods">
+                      <i className="fa fa-truck pr-3"></i>
+                      <span>Shipping Methods</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <a href="#charts" className="has-arrow">
+                      <i className="fa fa-area-chart pr-3"></i>
+                      <span>Portal Clients</span>
+                    </a>
+                    <ul>
+                      <li className={urlSegment === "Clients" ? "active" : ""}>
+                        <Link to="/Clients">Clients List</Link>{" "}
+                      </li>
+                    </ul>
+                  </li>
+                </>
               )}
               <li
                 onClick={() => {
@@ -319,6 +328,7 @@ export const approuter = createBrowserRouter([
       { path: "/CreateOrder", element: <CreateOrder /> }, // co
       { path: "/UploadManifest", element: <UploadManifest /> }, // um
       { path: "/WalletHistory", element: <WalletHistory /> }, // wallet
+      { path: "/ShippingMethods", element: <ShippingMethods /> },
     ],
   },
 ]);

@@ -158,6 +158,23 @@ export default function Side() {
                     </ul>
                   </li>
                 )}
+                {console?.log(user)}
+                {user && user == "admin" && (
+                  <li>
+                    <Link to="/ShippingMethods">
+                      <i className="fa fa-truck pr-3"></i>
+                      <span>Shipping Methods</span>
+                    </Link>
+                  </li>
+                )}
+                {user && user === "admin" && (
+                  <li>
+                    <Link to="/ShippingMethods">
+                      <i className="fa fa-truck pr-3"></i>
+                      <span>Shipping Methods</span>
+                    </Link>
+                  </li>
+                )}
                 {user && user === "admin" && (
                   <li>
                     <a href="#charts" className="has-arrow">
