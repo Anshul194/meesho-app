@@ -94,6 +94,12 @@ const orderItemSchema = new mongoose.Schema(
     packingCharge: {
       type: Number,
     },
+    shippingMethod: {
+      type: String,
+    },
+    shippingCharge: {
+      type: Number,
+    },
     totalPrice: {
       type: Number,
     },
@@ -138,6 +144,12 @@ const orderSchema = new mongoose.Schema(
       // Order Placed ||  Cancelled ||  Right RTO Return ||  Right Customer Return || Wrong RTO Return || Wrong Customer Return
     },
     packingCharge: {
+      type: Number,
+    },
+    shippingMethod: {
+      type: String,
+    },
+    shippingCharge: {
       type: Number,
     },
     totalPrice: {

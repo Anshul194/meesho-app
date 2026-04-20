@@ -218,6 +218,8 @@ const OrderHistory = () => {
             "Master SKU": item.masterSKU,
             "Product Price": item.productPrice,
             Quantity: item.quantity,
+            "Shipping Method": item.shippingMethod || "",
+            "Shipping Charge": item.shippingCharge !== undefined ? item.shippingCharge : "",
             "Total Price": item.totalPrice,
           };
           cleanedData.push(cleanedOrder);
@@ -232,6 +234,8 @@ const OrderHistory = () => {
           "Master SKU": order.masterSKU,
           "Product Price": order.productPrice,
           Quantity: order.quantity,
+          "Shipping Method": order.shippingMethod || "",
+          "Shipping Charge": order.shippingCharge !== undefined ? order.shippingCharge : "",
           "Total Price": order.totalPrice,
         };
         cleanedData.push(cleanedOrder);
@@ -370,6 +374,8 @@ const OrderHistory = () => {
                     <th>Status</th>
                     <th>Price</th>
                     <th>Packing Charge</th>
+                    <th>Shipping Method</th>
+                    <th>Shipping Charge</th>
                     <th>Total</th>
                   </tr>
                 </thead>
@@ -472,6 +478,8 @@ const OrderHistory = () => {
                               </td>
                               <td>{item.productPrice}</td>
                               <td>{item.packingCharge}</td>
+                              <td>{item.shippingMethod || ""}</td>
+                              <td>{item.shippingCharge !== undefined ? item.shippingCharge : ""}</td>
                               <td>{item.totalPrice}</td>
                             </tr>
                           ))}

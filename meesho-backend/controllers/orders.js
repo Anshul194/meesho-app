@@ -155,6 +155,13 @@ const createOrder = async (req, res) => {
       const masterSKU = await MasterSKU.findById(product.masterSKU);
       const productDoc = await Product.findById(product._id);
 
+      // Use shippingMethod and shippingCharge from product or from req.body (for single shipping method per order)
+      const shippingMethod = product.shippingMethod || req.body.shippingMethod || null;
+      const shippingCharge = product.shippingCharge !== undefined ? Number(product.shippingCharge) : (req.body.shippingCharge !== undefined ? Number(req.body.shippingCharge) : 0);
+
+      // Calculate total price including shipping charge
+      const totalPrice = parseFloat(product.price * product.quantity + 5 + shippingCharge);
+
       const myOrder = {
         product: productDoc,
         client: client,
@@ -164,7 +171,9 @@ const createOrder = async (req, res) => {
         status: "Order Placed",
         quantity: parseFloat(product.quantity),
         packingCharge: 5,
-        totalPrice: parseFloat(product.price * product.quantity + 5),
+        shippingMethod: shippingMethod,
+        shippingCharge: shippingCharge,
+        totalPrice: totalPrice,
       };
 
       // push order in orderArr

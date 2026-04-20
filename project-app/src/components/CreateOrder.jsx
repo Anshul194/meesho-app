@@ -11,6 +11,7 @@ import {
   Snackbar,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import { API_ENDPOINT } from "../util";
@@ -20,10 +21,14 @@ import useWindowSize from "../hooks/useWindowSize";
 const CreateOrder = () => {
   const navigate = useNavigate();
   const [productsList, setProductsList] = useState([]);
+  const [shippingMethods, setShippingMethods] = useState([]);
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState(null);
+  const [ownLabel, setOwnLabel] = useState(null);
+  const [shippingCharge, setShippingCharge] = useState(0);
 
   const [open, setOpen] = React.useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
-  const [marketPlace, setMarketPlace] = useState("Meesho");
+  const [marketPlace, setMarketPlace] = useState(""); // Default to empty
   const [productSKUs, setProductSKU] = useState([]);
   const [isExploading, setIsExploading] = useState(false);
   const { width, height } = useWindowSize;
@@ -210,6 +215,28 @@ const CreateOrder = () => {
     fetchProducts(); // Fetch products when the component mounts
     fetchClientData(); // Fetch client data when the component mounts
   }, []);
+
+  useEffect(() => {
+    if (marketPlace !== "Meesho") {
+      fetchShippingMethods();
+    } else {
+      setShippingMethods([]);
+      setSelectedShippingMethod(null);
+      setShippingCharge(0);
+    }
+  }, [marketPlace]);
+
+  const fetchShippingMethods = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`${API_ENDPOINT}/api/v1/shipping-methods`, {
+        headers: { "x-access-token": token },
+      });
+      setShippingMethods(res.data.data);
+    } catch (err) {
+      setShippingMethods([]);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -409,8 +436,13 @@ const CreateOrder = () => {
         return;
       }
 
+
       for (const product of products) {
         totalPrice += product.price * product.quantity + 4;
+      }
+      // Add shipping charge if not Meesho
+      if (marketPlace !== "Meesho" && shippingCharge) {
+        totalPrice += Number(shippingCharge);
       }
 
       if (totalPrice > walletBalance) {
@@ -424,11 +456,21 @@ const CreateOrder = () => {
       const formData = new FormData();
 
       // Add product data
-      formData.append("products", JSON.stringify(products));
 
+      formData.append("products", JSON.stringify(products));
       formData.append("marketPlace", marketPlace);
       formData.append("clientId", clientId);
-      formData.append("label", label);
+      // Attach label only if required by selected shipping method
+      let selectedMethodObj = shippingMethods.find(m => m.name === selectedShippingMethod);
+      if (marketPlace !== "Meesho" && selectedMethodObj && selectedMethodObj._id === "69e60bc22e8678f757162c5f") {
+        formData.append("label", ownLabel);
+      } else {
+        formData.append("label", label);
+      }
+      if (marketPlace !== "Meesho") {
+        formData.append("shippingMethod", selectedShippingMethod);
+        formData.append("shippingCharge", shippingCharge);
+      }
 
       const requestOptions = {
         method: "POST",
@@ -549,16 +591,22 @@ const CreateOrder = () => {
                 <i className="fa-solid fa-plus pr-2"></i>Add Money
               </button>
 
+
               <div className="row mt-3">
                 <div className="col-sm-12">
                   <div className="d-flex flex-row flex-wrap mt-3">
                     <div className="form-group">
-                      <label for="exampleFormControlSelect1">Marketplace</label>
+                      <label htmlFor="exampleFormControlSelect1">Marketplace</label>
                       <select
                         className="form-control"
                         id="exampleFormControlSelect1"
-                        onChange={(e) => setMarketPlace(e.target.value)}
+                        value={marketPlace}
+                        onChange={(e) => {
+                          setMarketPlace(e.target.value);
+                          setSelectedShippingMethod("");
+                        }}
                       >
+                        <option value="">Select your marketplace</option>
                         <option>Meesho</option>
                         <option>Amazon</option>
                         <option>Flipkart</option>
@@ -654,10 +702,11 @@ const CreateOrder = () => {
                     </div>
                   </div>
 
+
                   <div className="col-sm-6">
                     <div className="form-group">
                       <label
-                        for="exampleFormControlInput001"
+                        htmlFor="exampleFormControlInput001"
                         className="amount"
                       >
                         Price
@@ -671,6 +720,56 @@ const CreateOrder = () => {
                       />
                     </div>
                   </div>
+
+                  {/* Shipping method and label upload after price */}
+                  {marketPlace && marketPlace !== "Meesho" && (
+                    <>
+                      <div className="col-sm-6">
+                        <div className="form-group">
+                          <label htmlFor="shippingMethodSelect">Shipping Method</label>
+                          <select
+                            className="form-control"
+                            id="shippingMethodSelect"
+                            value={selectedShippingMethod || ""}
+                            onChange={e => {
+                              setSelectedShippingMethod(e.target.value);
+                              const method = shippingMethods.find(m => m.name === e.target.value);
+                              setShippingCharge(method ? method.charge : 0);
+                            }}
+                          >
+                            <option value="">Select Shipping Method</option>
+                            {shippingMethods.map((m) => (
+                              <option key={m._id} value={m.name}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      {/* Only show label upload if selected shipping method is the one with id 69e60bc22e8678f757162c5f */}
+                      {(() => {
+                        const selectedMethod = shippingMethods.find(m => m.name === selectedShippingMethod);
+                        return selectedMethod && selectedMethod._id === "69e60bc22e8678f757162c5f";
+                      })() && (
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label>Upload Label (PDF)</label>
+                            <input
+                              type="file"
+                              accept=".pdf"
+                              className="form-control"
+                              onChange={e => setOwnLabel(e.target.files[0])}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {shippingCharge > 0 && (
+                        <div className="col-sm-6">
+                          <div className="form-group mt-2">
+                            <strong>Shipping Charge: ₹{shippingCharge}</strong>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
 
                   <div
                     className="col-sm-6"
