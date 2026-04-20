@@ -1,0 +1,276 @@
+
+
+
+.manu01{
+    border: 2px solid #000 !important;
+    height: 30px !important;
+    width: auto !important;
+    padding: 10px !important;
+    margin-top: 10px !important;
+    margin-right: 10px !important;
+    margin-left: 10px !important;
+    
+}
+
+
+
+.manu368{
+    border: 2px solid #000 !important;
+    height: 30px !important;
+    width: 100% !important;
+    padding: 10px !important;
+    margin-top: 10px !important;
+    margin-right: 10px !important;
+    margin-left: 10px !important;
+    
+}
+.to{
+    color: #000 !important;
+    font-size: 18px !important;
+    margin-top: 15px !important;
+    margin-left: 10px !important;
+    margin-right: 10px !important;
+}
+
+.button01{
+    background-color:  #1341e8 !important;
+    width: 110px;
+    height:30px;
+    border-radius: 15px;
+    border: 0px;
+    color: #fff;
+    margin-left: 10px !important;
+    margin-right: 50px !important;
+    margin-top: 10px !important;
+}
+
+.button368{
+    background-color:  #1341e8 !important;
+    width: 110px;
+    height:30px;
+    border-radius: 15px;
+    border: 0px;
+    color: #fff;
+    margin-left: 10px !important;
+    margin-right: 50px !important;
+    margin-top: 30px !important;
+}
+
+.button02{
+    background-color:  #1341e8 !important;
+    width: 100px;
+    height:30px;
+    border-radius: 15px;
+    border: 0px;
+    color: #fff;
+}
+
+
+.btn3 {
+    background-color: #8B0000;
+    width: 110px;
+    height: 30px;
+    margin: 10px 10px 10px 10px;
+    border-radius: 10px;
+    border: 0px;
+    color: #fff;
+  }
+
+  .btn4 {
+    background-color: #09ba44;
+    width: 160px;
+    height: 30px;
+    margin: 10px 10px 10px 10px;
+    border-radius: 10px;
+    border: 0px;
+    color: #fff;
+  }
+
+  .btn5 {
+    background-color: #0a5222;
+    width: 160px;
+    height: 30px;
+    margin: 10px 10px 10px 10px;
+    border-radius: 10px;
+    border: 0px;
+    color: #fff;
+  }
+
+  .btn6 {
+    background-color: #FF0000;
+    width: 160px;
+    height: 30px;
+    margin: 10px 10px 10px 10px;
+    border-radius: 10px;
+    border: 0px;
+    color: #fff;
+  }
+
+  .btn7 {
+    background-color: #ED2939;
+    width: 180px;
+    height: 30px;
+    margin: 10px 10px 10px 10px;
+    border-radius: 10px;
+    border: 0px;
+    color: #fff;
+  }
+
+.pend{
+    color: #a6a80f;
+}
+
+.aapr{
+    color: #0c7a22;
+}
+
+.rej{
+    color: #661f07;
+}
+
+.sub-button{
+    background-color: #0d9e25;
+    width: 90px;
+    height: 30px;
+    color: #fff;
+    border: 0px;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.sub-button02{
+    background-color: #1290a3;
+    width: 90px;
+    height: 30px;
+    color: #fff;
+    border: 0px;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.head01{
+    font-weight: 600;
+    font-size: 25px;
+}
+
+.head03{
+    color: #000;
+    font-weight: 700;
+    font-size: 20px;
+    margin-top: 30px !important;
+    text-align: center;
+}
+
+
+.ben-name{
+    color: #000 !important;
+    font-size: 20px !important;
+    font-weight: 800;
+    }
+.para01{
+    color: #000 !important;
+    font-size: 19px !important;
+    font-weight: 400;
+}
+
+.ben-name01{
+    color: #000 !important;
+    font-size: 20px !important;
+    font-weight: 800;
+    text-align: center !important;
+    }
+.para02{
+    color: #000 !important;
+    font-size: 19px !important;
+    font-weight: 400;
+    text-align: center !important;
+}
+
+@media screen and (min-width:701px){
+    .image01{
+        width: 60% !important;
+        height: 60% !important;
+    margin-top: -80px !important;
+    }
+ }
+
+ @media screen and (max-width:701px){
+    .image01{
+        width: 70% !important;
+        height: 70% !important;
+   
+    }
+ }
+
+
+.hor{
+    width:100% !important;
+    background-color: #a8a4a3 !important;
+    height: 3px !important;
+}
+
+.amount{
+    color: #000;
+    font-size: 16px !important;
+}
+
+.add-money{
+    background-color: #0a912e;
+    width:130px;
+    height:30px;
+    color: #fff;
+    border-radius: 10px;
+    border: 0px;
+}
+.note{
+    color: #000 !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+}
+
+.desc{
+    color: #000 !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+}
+
+.add-more{
+    background-color: #242b57;
+    width:130px;
+    height:30px;
+    color: #fff;
+    border-radius: 10px;
+    border: 0px;
+}
+
+.add-more01{
+    background-color: #384fe0;
+    width:130px;
+    height:30px;
+    color: #fff;
+    border-radius: 10px;
+    border: 0px;
+}
+
+.placeo{
+    background-color: #0aa82a;
+    width:150px;
+    height:30px;
+    color: #fff;
+    border-radius: 10px;
+    border: 0px;
+}
+
+.placeo1{
+    background-color: #0aa82a;
+    width:120px;
+    height:30px;
+    color: #fff;
+    border-radius: 10px;
+    border: 0px;
+}
+
+.or{
+    color: #000;
+    font-size: 25px;
+}
