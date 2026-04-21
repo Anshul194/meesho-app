@@ -552,12 +552,13 @@ const OrderHistory = () => {
                                           marketId: item.marketId || "",
                                           trackingId: item.trackingId || "",
                                           trackingUrl: item.trackingUrl || "",
-                                          shippingPartnerName: item.shippingPartnerName || ""
+                                          shippingPartnerName: item.shippingPartnerName || "",
+                                          trackingLabelPath: item.trackingLabelPath || ""
                                         });
                                         setTrackingModalOpen(true);
                                       }}
                                     >
-                                      <i className="fa-solid fa-truck pr-2"></i> Tracking URL
+                                      <i className="fa-solid fa-truck pr-2"></i> Add Tracking URL
                                     </button>
                                   )}
                                   <br />
@@ -756,12 +757,13 @@ const OrderHistory = () => {
                                       marketId: order.marketId || "",
                                       trackingId: order.trackingId || "",
                                       trackingUrl: order.trackingUrl || "",
-                                      shippingPartnerName: order.shippingPartnerName || ""
+                                      shippingPartnerName: order.shippingPartnerName || "",
+                                      trackingLabelPath: order.trackingLabelPath || ""
                                     });
                                     setTrackingModalOpen(true);
                                   }}
                                 >
-                                  <i className="fa-solid fa-truck pr-2"></i> Tracking URL
+                                  <i className="fa-solid fa-truck pr-2"></i> Add Tracking URL
                                 </button>
                               )}
                               <br />
@@ -894,7 +896,7 @@ const OrderHistory = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Tracking URL</label>
+                  <label> Add Tracking URL</label>
                   <input
                     className="form-control"
                     value={trackingData.trackingUrl}
@@ -920,6 +922,15 @@ const OrderHistory = () => {
                 <Button variant="contained" style={{ backgroundColor: '#ff9800', color: '#fff' }} onClick={handleTrackingUpdateSubmit}>
                   Update
                 </Button>
+                {trackingData.trackingLabelPath && (
+                  <Button
+                    variant="outlined"
+                    style={{ color: '#ff9800', borderColor: '#ff9800' }}
+                    onClick={() => window.open(`${API_ENDPOINT}/${trackingData.trackingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                  >
+                    Preview Tracking Label
+                  </Button>
+                )}
               </div>
             </Box>
           </Modal>

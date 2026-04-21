@@ -493,8 +493,7 @@ export default function Dorder() {
       }
 
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${
-          selectedClient || ""
+        `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${selectedClient || ""
         }&orderNumber=${searchValue}&page=${page}&limit=${0}&from=${startDate}&to=${endDate}&isLableDownloaded=true`,
         {
           headers: {
@@ -944,12 +943,13 @@ export default function Dorder() {
                                             marketId: item.marketId || "",
                                             trackingId: item.trackingId || "",
                                             trackingUrl: item.trackingUrl || "",
-                                            shippingPartnerName: item.shippingPartnerName || ""
+                                            shippingPartnerName: item.shippingPartnerName || "",
+                                            trackingLabelPath: item.trackingLabelPath || ""
                                           });
                                           setTrackingModalOpen(true);
                                         }}
                                       >
-                                        <i className="fa-solid fa-truck pr-2"></i> Tracking URL
+                                        <i className="fa-solid fa-truck pr-2"></i>Add Tracking URL
                                       </button>
                                       {order.shippingLabelPath && (
                                         <button
@@ -1155,12 +1155,13 @@ export default function Dorder() {
                                         marketId: order.marketId || "",
                                         trackingId: order.trackingId || "",
                                         trackingUrl: order.trackingUrl || "",
-                                        shippingPartnerName: order.shippingPartnerName || ""
+                                        shippingPartnerName: order.shippingPartnerName || "",
+                                        trackingLabelPath: order.trackingLabelPath || ""
                                       });
                                       setTrackingModalOpen(true);
                                     }}
                                   >
-                                    <i className="fa-solid fa-truck pr-2"></i> Tracking URL
+                                    <i className="fa-solid fa-truck pr-2"></i> Update Tracking
                                   </button>
                                   {order.shippingLabelPath && (
                                     <button
@@ -1502,6 +1503,15 @@ export default function Dorder() {
               <Button variant="contained" color="warning" onClick={handleTrackingUpdateSubmit}>
                 Update
               </Button>
+              {trackingData.trackingLabelPath && (
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  onClick={() => window.open(`${API_ENDPOINT}/${trackingData.trackingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                >
+                  Preview Tracking Label
+                </Button>
+              )}
             </div>
           </Box>
         </Modal>
@@ -1522,7 +1532,7 @@ export default function Dorder() {
       </Snackbar>
       <Modal
         open={open2}
-        onClose={() => {}}
+        onClose={() => { }}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
