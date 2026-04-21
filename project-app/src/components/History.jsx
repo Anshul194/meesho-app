@@ -781,6 +781,9 @@ export default function Dorder() {
                     <th>Status</th>
                     <th>Price</th>
                     <th>Packing Charge</th>
+                    <th>Shipping Method</th>
+                    <th>Shipping Charge</th>
+                    <th>Shipping Label</th>
                     <th>Total</th>
                   </tr>
                 </thead>
@@ -810,20 +813,38 @@ export default function Dorder() {
                               {index === 0 && (
                                 <td rowSpan={order.orders.length}>
                                   {order.labelPath ? (
-                                    <a
-                                      style={{
-                                        textDecoration: "none",
-                                        color: "#fff",
-                                        backgroundColor: "blue",
-                                        borderRadius: "20px",
-                                        padding: "4px 10px",
-                                      }}
-                                      href={`${API_ENDPOINT}/${order.labelPath}`}
-                                      download={true}
-                                    >
-                                      <i className="fa-solid fa-download pr-2"></i>{" "}
-                                      Label
-                                    </a>
+                                    <>
+                                      <a
+                                        style={{
+                                          textDecoration: "none",
+                                          color: "#fff",
+                                          backgroundColor: "blue",
+                                          borderRadius: "20px",
+                                          padding: "4px 10px",
+                                          marginRight: "8px",
+                                        }}
+                                        href={`${API_ENDPOINT}/${order.labelPath}`}
+                                        download={true}
+                                      >
+                                        <i className="fa-solid fa-download pr-2"></i>{" "}
+                                        Label
+                                      </a>
+                                      {order.shippingLabelPath && (
+                                        <button
+                                          style={{
+                                            background: "#4caf50",
+                                            color: "#fff",
+                                            border: "none",
+                                            borderRadius: "10px",
+                                            padding: "4px 10px",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                        >
+                                          Preview Shipping Label
+                                        </button>
+                                      )}
+                                    </>
                                   ) : (
                                     <a
                                       style={{
@@ -901,6 +922,27 @@ export default function Dorder() {
                                   {item.packingCharge}
                                 </span>
                               </td>
+                              <td>{item.shippingMethod || ""}</td>
+                              <td>{item.shippingCharge !== undefined ? item.shippingCharge : ""}</td>
+                              <td>
+                                {order.shippingLabelPath ? (
+                                  <button
+                                    style={{
+                                      background: "#4caf50",
+                                      color: "#fff",
+                                      border: "none",
+                                      borderRadius: "10px",
+                                      padding: "4px 10px",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                  >
+                                    Preview Shipping Label
+                                  </button>
+                                ) : (
+                                  <span style={{ color: '#aaa', fontSize: '12px' }}>No Shipping Label</span>
+                                )}
+                              </td>
                               <td>
                                 <span className="phone">
                                   <i className="zmdi zmdi-phone m-r-10"></i>
@@ -926,20 +968,38 @@ export default function Dorder() {
                             </td>
                             <td>
                               {order.labelPath ? (
-                                <a
-                                  style={{
-                                    textDecoration: "none",
-                                    color: "#fff",
-                                    backgroundColor: "blue",
-                                    borderRadius: "20px",
-                                    padding: "4px 10px",
-                                  }}
-                                  href={`${API_ENDPOINT}/${order.labelPath}`}
-                                  download={true}
-                                >
-                                  <i className="fa-solid fa-download pr-2"></i>{" "}
-                                  Label
-                                </a>
+                                <>
+                                  <a
+                                    style={{
+                                      textDecoration: "none",
+                                      color: "#fff",
+                                      backgroundColor: "blue",
+                                      borderRadius: "20px",
+                                      padding: "4px 10px",
+                                      marginRight: "8px",
+                                    }}
+                                    href={`${API_ENDPOINT}/${order.labelPath}`}
+                                    download={true}
+                                  >
+                                    <i className="fa-solid fa-download pr-2"></i>{" "}
+                                    Label
+                                  </a>
+                                  {order.shippingLabelPath && (
+                                    <button
+                                      style={{
+                                        background: "#4caf50",
+                                        color: "#fff",
+                                        border: "none",
+                                        borderRadius: "10px",
+                                        padding: "4px 10px",
+                                        cursor: "pointer",
+                                      }}
+                                      onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                    >
+                                      Preview Shipping Label
+                                    </button>
+                                  )}
+                                </>
                               ) : (
                                 <a
                                   style={{
@@ -1006,14 +1066,33 @@ export default function Dorder() {
                                 {order.productPrice}
                               </span>
                             </td>
-
                             <td>
                               <span className="phone">
                                 <i className="zmdi zmdi-phone m-r-10"></i>
                                 {order.packingCharge}
                               </span>
                             </td>
-
+                            <td>{order.shippingMethod || ""}</td>
+                            <td>{order.shippingCharge !== undefined ? order.shippingCharge : ""}</td>
+                            <td>
+                              {order.shippingLabelPath ? (
+                                <button
+                                  style={{
+                                    background: "#4caf50",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: "10px",
+                                    padding: "4px 10px",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                >
+                                  Preview Shipping Label
+                                </button>
+                              ) : (
+                                <span style={{ color: '#aaa', fontSize: '12px' }}>No Shipping Label</span>
+                              )}
+                            </td>
                             <td>
                               <span className="phone">
                                 <i className="zmdi zmdi-phone m-r-10"></i>

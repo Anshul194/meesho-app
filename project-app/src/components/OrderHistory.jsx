@@ -422,6 +422,7 @@ const OrderHistory = () => {
                     <th>Packing Charge</th>
                     <th>Shipping Method</th>
                     <th>Shipping Charge</th>
+                    <th>Shipping Label</th>
                     <th>Total</th>
                   </tr>
                 </thead>
@@ -475,17 +476,49 @@ const OrderHistory = () => {
                                   />
                                   <br />
                                   {order.labelName && order.labelPath && (
-                                    <span
-                                      style={{
-                                        color: "green",
-                                        fontSize: "10px",
-                                        padding: "4px 8px",
-                                        backgroundColor: "#aaffaa",
-                                        borderRadius: "40px",
-                                      }}
-                                    >
-                                      Uploaded
-                                    </span>
+                                    <>
+                                      <span
+                                        style={{
+                                          color: "green",
+                                          fontSize: "10px",
+                                          padding: "4px 8px",
+                                          backgroundColor: "#aaffaa",
+                                          borderRadius: "40px",
+                                        }}
+                                      >
+                                        Uploaded
+                                      </span>
+                                      <button
+                                        style={{
+                                          marginLeft: "10px",
+                                          background: "#2196f3",
+                                          color: "#fff",
+                                          border: "none",
+                                          borderRadius: "10px",
+                                          padding: "4px 10px",
+                                          cursor: "pointer",
+                                        }}
+                                        onClick={() => window.open(`${API_ENDPOINT}/${order.labelPath.replace(/\\/g, '/')}`, '_blank')}
+                                      >
+                                        Preview Label
+                                      </button>
+                                      {order.shippingLabelPath && (
+                                        <button
+                                          style={{
+                                            marginLeft: "10px",
+                                            background: "#4caf50",
+                                            color: "#fff",
+                                            border: "none",
+                                            borderRadius: "10px",
+                                            padding: "4px 10px",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                        >
+                                          Preview Shipping Label
+                                        </button>
+                                      )}
+                                    </>
                                   )}
                                 </td>
                               )}
@@ -526,7 +559,25 @@ const OrderHistory = () => {
                               <td>{item.packingCharge}</td>
                               <td>{item.shippingMethod || ""}</td>
                               <td>{item.shippingCharge !== undefined ? item.shippingCharge : ""}</td>
-                              <td>{item.totalPrice}</td>
+                              <td>
+                                {order.shippingLabelPath ? (
+                                  <button
+                                    style={{
+                                      background: "#4caf50",
+                                      color: "#fff",
+                                      border: "none",
+                                      borderRadius: "10px",
+                                      padding: "4px 10px",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                  >
+                                    Preview Shipping Label
+                                  </button>
+                                ) : (
+                                  <span style={{ color: '#aaa', fontSize: '12px' }}>No Shipping Label</span>
+                                )}
+                              </td>
                             </tr>
                           ))}
 

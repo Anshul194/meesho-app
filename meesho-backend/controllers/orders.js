@@ -97,16 +97,25 @@ const { mongoose } = require("mongoose");
 
 const createOrder = async (req, res) => {
   try {
-    const file = req.file;
+    // Separate handling for 'label' and 'shippinglabel' fields
+    let labelPath = null, labelName = null, shippingLabelPath = null, shippingLabelName = null;
+    if (req.files) {
+      if (req.files['label'] && req.files['label'][0]) {
+        labelPath = req.files['label'][0].path;
+        labelName = req.files['label'][0].originalname;
+      }
+      if (req.files['shippinglabel'] && req.files['shippinglabel'][0]) {
+        shippingLabelPath = req.files['shippinglabel'][0].path;
+        shippingLabelName = req.files['shippinglabel'][0].originalname;
+      }
+    } else if (req.file) {
+      // fallback for single file upload (legacy)
+      labelPath = req.file.path;
+      labelName = req.file.originalname;
+    }
+
     const { clientId, marketPlace, products: api_products } = req.body;
     const products = JSON.parse(api_products);
-
-    let labelPath;
-    let labelName;
-    if (file) {
-      labelPath = file.path;
-      labelName = file.originalname;
-    }
 
     const client = await Client.findById(clientId);
     if (!client) {
@@ -199,6 +208,8 @@ const createOrder = async (req, res) => {
       marketPlace: marketPlace,
       labelPath: labelPath,
       labelName: labelName,
+      shippingLabelPath: shippingLabelPath,
+      shippingLabelName: shippingLabelName,
       orders: orderArr,
       clientId: clientId,
       revisions: 1,
@@ -1130,6 +1141,8 @@ const uploadSingleLabel = async (req, res) => {
     // Update the existing order with the label information
     existingOrder.labelPath = labelPath;
     existingOrder.labelName = labelName;
+    existingOrder.shippingLabelPath = labelPath;
+    existingOrder.shippingLabelName = labelName;
 
     // Save the updated order to the database
     await existingOrder.save();

@@ -457,17 +457,39 @@ const CreateOrder = () => {
       const formData = new FormData();
 
       // Add product data
-
       formData.append("products", JSON.stringify(products));
       formData.append("marketPlace", marketPlace);
       formData.append("clientId", clientId);
-      // Attach label only if required by selected shipping method
-      let selectedMethodObj = shippingMethods.find(m => m._id === selectedShippingMethod);
-      if (marketPlace !== "Meesho" && selectedMethodObj && selectedMethodObj._id === "69e60bc22e8678f757162c5f") {
-        formData.append("label", ownLabel);
+
+
+      // For non-Meesho, require both label and shippinglabel ONLY if selected shipping method is 69e60bc22e8678f757162c5f
+      if (marketPlace !== "Meesho") {
+        if (selectedShippingMethod === "69e60bc22e8678f757162c5f") {
+          if (!label || !ownLabel) {
+            handleClose3();
+            alert("Please select both Label and Shipping Label files for this shipping method.");
+            return;
+          }
+          formData.append("label", label);
+          formData.append("shippinglabel", ownLabel);
+        } else {
+          if (!label) {
+            handleClose3();
+            alert("Please select the Label file.");
+            return;
+          }
+          formData.append("label", label);
+        }
       } else {
+        // For Meesho, only label is required
+        if (!label) {
+          handleClose3();
+          alert("Please select the Label file.");
+          return;
+        }
         formData.append("label", label);
       }
+
       if (marketPlace !== "Meesho") {
         formData.append("shippingMethod", selectedShippingMethod);
         formData.append("shippingCharge", shippingCharge);
@@ -819,15 +841,20 @@ const CreateOrder = () => {
                     marginTop: "0px",
                   }}
                 >
-                  Upload Label
+                  {marketPlace && marketPlace !== "Meesho" ? "Upload Product Label (PDF)" : "Upload Label (PDF)"}
                   <input
                     type="file"
                     style={{ display: "none" }}
-                    onChange={(e) => handleFileChange(e)} // Pass index to identify the corresponding product
+                    onChange={e => {
+                      if (marketPlace && marketPlace !== "Meesho") {
+                        setLabel(e.target.files[0]);
+                      } else {
+                        setLabel(e.target.files[0]);
+                      }
+                    }}
                     accept=".pdf"
                   />
                 </Button>
-
                 {label && <p style={{ marginLeft: "10px" }}>{label.name}</p>}
               </div>
               <br />
