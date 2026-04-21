@@ -110,6 +110,24 @@ const orderItemSchema = new mongoose.Schema(
     orderPlacedAt: {
       type: Date,
     },
+    marketId: {
+      type: String,
+    },
+    trackingId: {
+      type: String,
+    },
+    trackingUrl: {
+      type: String,
+    },
+    trackingLabelPath: {
+      type: String,
+    },
+    trackingLabelName: {
+      type: String,
+    },
+    shippingPartnerName: {
+      type: String,
+    },
   },
   { timestamps: true } // Moved timestamps option here
 );
@@ -170,6 +188,24 @@ const orderSchema = new mongoose.Schema(
     },
     orderPlacedAt: {
       type: Date,
+    },
+    marketId: {
+      type: String,
+    },
+    trackingId: {
+      type: String,
+    },
+    trackingUrl: {
+      type: String,
+    },
+    trackingLabelPath: {
+      type: String,
+    },
+    trackingLabelName: {
+      type: String,
+    },
+    shippingPartnerName: {
+      type: String,
     },
   },
   { timestamps: true } // Moved timestamps option here

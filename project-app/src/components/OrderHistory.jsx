@@ -8,12 +8,17 @@ import {
   Pagination,
   Select as MUISelect,
   Snackbar,
+  Modal,
+  Box,
+  Typography,
+  Button
 } from "@mui/material";
 import { exportToExcel } from "../util/util";
 
 import Select from "react-select";
 
 const OrderHistory = () => {
+  const userType = localStorage.getItem("user");
   const [marketPlace, setMarketPlace] = useState("");
   const marketPlaceOptions = [
     { value: "Meesho", label: "Meesho" },
@@ -37,6 +42,15 @@ const OrderHistory = () => {
   const [open, setOpen] = React.useState(false);
   const [snack, setSnack] = React.useState("");
   const [snackType, setSnackType] = React.useState("success");
+  const [trackingModalOpen, setTrackingModalOpen] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const [trackingData, setTrackingData] = useState({
+    marketId: "",
+    trackingId: "",
+    trackingUrl: "",
+    shippingPartnerName: "",
+    trackingLabel: null
+  });
   const [excelData, setExcelData] = useState([]);
   const [open3, setOpen3] = React.useState(false);
   const handleClick = () => {
@@ -151,6 +165,47 @@ const OrderHistory = () => {
       }
     } catch (error) {
       console.error("Error uploading label:", error);
+    }
+  };
+
+  const handleTrackingUpdateSubmit = async () => {
+    try {
+      if (!currentOrder) return;
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("orderId", currentOrder.orderId);
+      if (currentOrder.itemId) formData.append("itemId", currentOrder.itemId);
+      formData.append("revisions", currentOrder.revisions);
+      formData.append("marketId", trackingData.marketId);
+      formData.append("trackingId", trackingData.trackingId);
+      formData.append("trackingUrl", trackingData.trackingUrl);
+      formData.append("shippingPartnerName", trackingData.shippingPartnerName);
+      if (trackingData.trackingLabel) {
+        formData.append("trackingLabel", trackingData.trackingLabel);
+      }
+
+      const response = await fetch(`${API_ENDPOINT}/api/v1/orders/update-shipping-info`, {
+        method: "POST",
+        headers: {
+          "x-access-token": token,
+          // "content-type": "application/json",
+        },
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSnack(data.message);
+        setSnackType("success");
+        handleClick();
+        setTrackingModalOpen(false);
+        fetchOrders();
+      } else {
+        setSnack(data.message);
+        setSnackType("error");
+        handleClick();
+      }
+    } catch (error) {
+      console.error("Error updating tracking:", error);
     }
   };
 
@@ -422,6 +477,9 @@ const OrderHistory = () => {
                     <th>Packing Charge</th>
                     <th>Shipping Method</th>
                     <th>Shipping Charge</th>
+                    <th>Tracking URL</th>
+                    <th>Shipping Partner</th>
+                    <th>Tracking Label Doc</th>
                     <th>Shipping Label</th>
                     <th>Total</th>
                   </tr>
@@ -474,6 +532,34 @@ const OrderHistory = () => {
                                       handleFileChange(e, order._id)
                                     }
                                   />
+                                  <br />
+                                  {userType === "admin" && (
+                                    <button
+                                      style={{
+                                        textDecoration: "none",
+                                        color: "#fff",
+                                        backgroundColor: "#ff9800",
+                                        borderRadius: "20px",
+                                        padding: "4px 10px",
+                                        marginRight: "8px",
+                                        border: "none",
+                                        fontSize: "12px",
+                                        marginTop: "4px"
+                                      }}
+                                      onClick={() => {
+                                        setCurrentOrder({ orderId: order._id, itemId: item._id, revisions: 1 });
+                                        setTrackingData({
+                                          marketId: item.marketId || "",
+                                          trackingId: item.trackingId || "",
+                                          trackingUrl: item.trackingUrl || "",
+                                          shippingPartnerName: item.shippingPartnerName || ""
+                                        });
+                                        setTrackingModalOpen(true);
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-truck pr-2"></i> Tracking URL
+                                    </button>
+                                  )}
                                   <br />
                                   {order.labelName && order.labelPath && (
                                     <>
@@ -560,6 +646,38 @@ const OrderHistory = () => {
                               <td>{item.shippingMethod || ""}</td>
                               <td>{item.shippingCharge !== undefined ? item.shippingCharge : ""}</td>
                               <td>
+                                {item.trackingUrl ? (
+                                  <a href={item.trackingUrl} target="_blank" rel="noreferrer" style={{ fontSize: '12px' }}>
+                                    {item.trackingId || 'View Tracking'}
+                                  </a>
+                                ) : (
+                                  <span style={{ color: '#aaa', fontSize: '10px' }}>No Tracking</span>
+                                )}
+                              </td>
+                              <td>
+                                {item.shippingPartnerName || <span style={{ color: '#aaa', fontSize: '10px' }}>-</span>}
+                              </td>
+                              <td>
+                                {item.trackingLabelPath ? (
+                                  <button
+                                    style={{
+                                      background: "#ff9800",
+                                      color: "#fff",
+                                      border: "none",
+                                      borderRadius: "10px",
+                                      padding: "4px 10px",
+                                      cursor: "pointer",
+                                      fontSize: "12px",
+                                    }}
+                                    onClick={() => window.open(`${API_ENDPOINT}/${item.trackingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                  >
+                                    Preview Label
+                                  </button>
+                                ) : (
+                                  <span style={{ color: '#aaa', fontSize: '10px' }}>No Doc</span>
+                                )}
+                              </td>
+                              <td>
                                 {order.shippingLabelPath ? (
                                   <button
                                     style={{
@@ -618,6 +736,34 @@ const OrderHistory = () => {
                                 style={{ display: "none" }}
                                 onChange={(e) => handleFileChange(e, order._id)}
                               />
+                              <br />
+                              {userType === "admin" && (
+                                <button
+                                  style={{
+                                    textDecoration: "none",
+                                    color: "#fff",
+                                    backgroundColor: "#ff9800",
+                                    borderRadius: "20px",
+                                    padding: "4px 10px",
+                                    marginRight: "8px",
+                                    border: "none",
+                                    fontSize: "12px",
+                                    marginTop: "4px"
+                                  }}
+                                  onClick={() => {
+                                    setCurrentOrder({ orderId: order._id, revisions: 0 });
+                                    setTrackingData({
+                                      marketId: order.marketId || "",
+                                      trackingId: order.trackingId || "",
+                                      trackingUrl: order.trackingUrl || "",
+                                      shippingPartnerName: order.shippingPartnerName || ""
+                                    });
+                                    setTrackingModalOpen(true);
+                                  }}
+                                >
+                                  <i className="fa-solid fa-truck pr-2"></i> Tracking URL
+                                </button>
+                              )}
                               <br />
                               {order.labelName && order.labelPath && (
                                 <span
@@ -711,6 +857,72 @@ const OrderHistory = () => {
           >
             <CircularProgress color="inherit" />
           </Backdrop>
+
+          <Modal
+            open={trackingModalOpen}
+            onClose={() => setTrackingModalOpen(false)}
+          >
+            <Box sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 400,
+              bgcolor: "background.paper",
+              boxShadow: 24,
+              p: 4,
+              borderRadius: 2
+            }}>
+              <Typography variant="h6" component="h2" gutterBottom>
+                Update Tracking URL
+              </Typography>
+              <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                <div className="form-group">
+                  <label>Market Id</label>
+                  <input
+                    className="form-control"
+                    value={trackingData.marketId}
+                    onChange={(e) => setTrackingData({ ...trackingData, marketId: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Tracking ID</label>
+                  <input
+                    className="form-control"
+                    value={trackingData.trackingId}
+                    onChange={(e) => setTrackingData({ ...trackingData, trackingId: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Tracking URL</label>
+                  <input
+                    className="form-control"
+                    value={trackingData.trackingUrl}
+                    onChange={(e) => setTrackingData({ ...trackingData, trackingUrl: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Shipping Partner Name</label>
+                  <input
+                    className="form-control"
+                    value={trackingData.shippingPartnerName}
+                    onChange={(e) => setTrackingData({ ...trackingData, shippingPartnerName: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Tracking Label (File)</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    onChange={(e) => setTrackingData({ ...trackingData, trackingLabel: e.target.files[0] })}
+                  />
+                </div>
+                <Button variant="contained" style={{ backgroundColor: '#ff9800', color: '#fff' }} onClick={handleTrackingUpdateSubmit}>
+                  Update
+                </Button>
+              </div>
+            </Box>
+          </Modal>
         </div>
       </div>
     </div>

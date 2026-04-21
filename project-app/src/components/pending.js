@@ -98,6 +98,60 @@ export default function Pending() {
     setOpen2(true);
   };
 
+  // Edit shipping/market info modal state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState(null);
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editData, setEditData] = useState({ marketId: "", trackingUrl: "", shippingPartnerName: "" });
+
+  const openEditModal = (order, item) => {
+    setEditingOrderId(order._id);
+    setEditingItemId(item ? item._id : null);
+    setEditData({
+      marketId: item?.marketId || order.marketId || "",
+      trackingUrl: item?.trackingUrl || order.trackingUrl || "",
+      shippingPartnerName: item?.shippingPartnerName || order.shippingPartnerName || "",
+    });
+    setEditOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditOpen(false);
+    setEditingOrderId(null);
+    setEditingItemId(null);
+  };
+
+  const saveEdit = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Token not found");
+      const payload = {
+        orderId: editingOrderId,
+        revisions: editingItemId ? 1 : 0,
+        itemId: editingItemId,
+        marketId: editData.marketId,
+        trackingUrl: editData.trackingUrl,
+        shippingPartnerName: editData.shippingPartnerName,
+      };
+
+      const res = await fetch(`${API_ENDPOINT}/api/v1/orders/update-shipping-info`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-access-token": token },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeEditModal();
+        fetchOrders();
+      } else {
+        alert(data.message || "Failed to update");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error updating shipping info");
+    }
+  };
+
   const handleClose2 = () => {
     setOpen2(false);
   };

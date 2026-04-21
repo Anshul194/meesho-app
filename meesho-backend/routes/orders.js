@@ -9,10 +9,12 @@ const {
   getOrdersForDashboard,
   getClientDashboard,
   updateOrdersStatus,
+  updateShippingInfo,
   downloadLabels,
 
   uploadSingleLabel,
   updateOrdersStatusFromExcel,
+  updateShippingInfoFromExcel,
   sendToDownloadedLables,
 } = require("../controllers/orders");
 const upload = require("../middleware/upload");
@@ -49,4 +51,8 @@ router.route("/update").post(authJWT, updateOrdersStatus);
 router
   .route("/update/excel")
   .post(authJWT, upload.single("order-excel"), updateOrdersStatusFromExcel);
+router.route("/update-shipping-info").post(authJWT, upload.single('trackingLabel'), updateShippingInfo);
+router
+  .route("/update-shipping-info/excel")
+  .post(authJWT, upload.single("tracking-excel"), updateShippingInfoFromExcel);
 module.exports = router;

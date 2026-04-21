@@ -826,8 +826,8 @@ const updateOrdersStatus = async (req, res) => {
           console.log("[updateOrdersStatus] ShippingMethod:", currentShippingMethod, "ShippingCharge:", currentShippingCharge, "PackingCharge:", currentPackingCharge, "TotalPrice:", currentTotalPrice);
 
           if (status === "Cancelled") {
-              // Always deduct packing charge on cancel
-              amount_credit = currentTotalPrice - currentPackingCharge;
+            // Always deduct packing charge on cancel
+            amount_credit = currentTotalPrice - currentPackingCharge;
           } else if (status === "Right RTO Return" || status === "Right Customer Return") {
             if (currentShippingMethod === targetShippingMethodId) {
               amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
@@ -921,8 +921,8 @@ const updateOrdersStatus = async (req, res) => {
               console.log("[updateOrdersStatus] ShippingMethod:", currentShippingMethod, "ShippingCharge:", currentShippingCharge, "PackingCharge:", currentPackingCharge, "TotalPrice:", currentTotalPrice);
 
               if (status === "Cancelled") {
-                  // Always deduct packing charge on cancel
-                  amount_credit = currentTotalPrice - currentPackingCharge;
+                // Always deduct packing charge on cancel
+                amount_credit = currentTotalPrice - currentPackingCharge;
               } else if (status === "Right RTO Return" || status === "Right Customer Return") {
                 if (currentShippingMethod === targetShippingMethodId) {
                   amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
@@ -1442,6 +1442,175 @@ const updateOrdersStatusFromExcel = async (req, res) => {
   }
 };
 
+const updateShippingInfo = async (req, res) => {
+  try {
+    const { orderId, revisions, itemId, marketId, trackingId, trackingUrl, shippingPartnerName } = req.body;
+    let trackingLabelPath = null, trackingLabelName = null;
+    if (req.file) {
+      trackingLabelPath = req.file.path;
+      trackingLabelName = req.file.originalname;
+    }
+
+    if (!orderId) {
+      return res.status(400).json({ message: "orderId is required", success: false });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found", success: false });
+    }
+
+    if (revisions && Number(revisions) === 1 && itemId) {
+      // update specific item
+      const itemObjectId = new mongoose.Types.ObjectId(itemId);
+      let found = false;
+      for (let i = 0; i < order.orders.length; i++) {
+        if (order.orders[i]._id.equals(itemObjectId)) {
+          if (marketId !== undefined) order.orders[i].marketId = marketId || null;
+          if (trackingId !== undefined) order.orders[i].trackingId = trackingId || null;
+          if (trackingUrl !== undefined) order.orders[i].trackingUrl = trackingUrl || null;
+          if (trackingLabelPath) {
+            order.orders[i].trackingLabelPath = trackingLabelPath;
+            order.orders[i].trackingLabelName = trackingLabelName;
+          }
+          if (shippingPartnerName !== undefined) order.orders[i].shippingPartnerName = shippingPartnerName || null;
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        return res.status(404).json({ message: "Order item not found", success: false });
+      }
+
+      await order.save();
+      return res.status(200).json({ message: "Order item shipping info updated", success: true, data: order });
+    }
+
+    // update main order fields
+    if (marketId !== undefined) order.marketId = marketId || null;
+    if (trackingId !== undefined) order.trackingId = trackingId || null;
+    if (trackingUrl !== undefined) order.trackingUrl = trackingUrl || null;
+    if (trackingLabelPath) {
+      order.trackingLabelPath = trackingLabelPath;
+      order.trackingLabelName = trackingLabelName;
+    }
+    if (shippingPartnerName !== undefined) order.shippingPartnerName = shippingPartnerName || null;
+
+    await order.save();
+    return res.status(200).json({ message: "Order shipping info updated", success: true, data: order });
+  } catch (error) {
+    console.error("updateShippingInfo error:", error);
+    return res.status(500).json({ message: error.message, success: false });
+  }
+}
+
+const updateShippingInfoFromExcel = async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({
+        message: "No file found",
+        success: false,
+      });
+    }
+
+    const filePath = file.path;
+    const fileName = file.originalname;
+    const fileExtension = fileName.split(".").pop();
+    if (fileExtension !== "xlsx") {
+      return res.status(400).json({
+        message: "Only xlsx files are supported",
+        success: false,
+      });
+    }
+
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = xlsx.utils.sheet_to_json(sheet);
+
+    if (jsonData.length === 0) {
+      return res.status(400).json({ message: "Excel file is empty", success: false });
+    }
+
+    const headerColumns = Object.keys(jsonData[0]);
+    const expectedColumns = ["marketPlaceOrderNumber", "trackingUrl"]; // minimum required
+
+    const hasRequired = expectedColumns.every(col => headerColumns.includes(col));
+    if (!hasRequired) {
+      return res.status(400).json({
+        message: "Invalid columns. Required: marketPlaceOrderNumber, trackingUrl. Optional: marketId, shippingPartnerName",
+        success: false,
+      });
+    }
+
+    let updatedCount = 0;
+    let errorData = [];
+
+    for (const row of jsonData) {
+      const { marketPlaceOrderNumber, trackingUrl, marketId, trackingId, shippingPartnerName } = row;
+
+      if (!marketPlaceOrderNumber || !trackingUrl) {
+        errorData.push({ row, reason: "Missing required fields" });
+        continue;
+      }
+
+      // Find order (revisions 0 or 1)
+      const order = await Order.findOne({
+        $or: [
+          { marketPlaceOrderNumber: String(marketPlaceOrderNumber) },
+          { "orders.marketPlaceOrderNumber": String(marketPlaceOrderNumber) },
+        ],
+      });
+
+      if (!order) {
+        errorData.push({ row, reason: "Order not found" });
+        continue;
+      }
+
+      if (order.revisions === 1) {
+        // Find specific item in orders array
+        let found = false;
+        for (let i = 0; i < order.orders.length; i++) {
+          if (order.orders[i].marketPlaceOrderNumber === String(marketPlaceOrderNumber)) {
+            if (marketId !== undefined) order.orders[i].marketId = String(marketId) || null;
+            if (trackingUrl !== undefined) order.orders[i].trackingUrl = String(trackingUrl) || null;
+            if (shippingPartnerName !== undefined) order.orders[i].shippingPartnerName = String(shippingPartnerName) || null;
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          await order.save();
+          updatedCount++;
+        } else {
+          errorData.push({ row, reason: "Order item not found" });
+        }
+      } else {
+        // Update main order
+        if (marketId !== undefined) order.marketId = String(marketId) || null;
+        if (trackingId !== undefined) order.trackingId = String(trackingId) || null;
+        if (trackingUrl !== undefined) order.trackingUrl = String(trackingUrl) || null;
+        if (shippingPartnerName !== undefined) order.shippingPartnerName = String(shippingPartnerName) || null;
+        await order.save();
+        updatedCount++;
+      }
+    }
+
+    res.status(200).json({
+      message: `${updatedCount} orders updated successfully`,
+      success: true,
+      errorData: errorData.length > 0 ? errorData : undefined
+    });
+
+  } catch (error) {
+    console.error("updateShippingInfoFromExcel error:", error);
+    res.status(500).json({ message: error.message, success: false });
+  }
+};
+
 const sendToDownloadedLables = async (req, res) => {
   try {
     const { ids, selectAll } = req.body;
@@ -1478,8 +1647,10 @@ module.exports = {
   getOrdersForDashboard,
   getClientDashboard,
   updateOrdersStatus,
+  updateShippingInfo,
   downloadLabels,
   uploadSingleLabel,
   updateOrdersStatusFromExcel,
+  updateShippingInfoFromExcel,
   sendToDownloadedLables,
 };
