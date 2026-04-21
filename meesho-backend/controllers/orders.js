@@ -793,12 +793,13 @@ const updateOrdersStatus = async (req, res) => {
         let amount_credit = 0;
         let orderStatus = "";
         orderStatus = orderDoc.status;
-        if (orderStatus === "Order Placed" && updateCount !== 1) {
+        console.log("[updateOrdersStatus] Processing orderId:", orderId, "status:", orderStatus, "updateCount:", orderDoc.updateCount);
+        if (orderStatus === "Order Placed" && orderDoc.updateCount !== 1) {
           const newOrder = new Order(orderDoc);
           newOrder.status = status;
           newOrder.createdAt = new Date();
           newOrder.updatedAt = new Date();
-          console.log("newOrder", newOrder);
+          console.log("[updateOrdersStatus] Creating new order revision:", newOrder);
           await newOrder.save();
 
           orderDoc.updateCount = 1;
@@ -808,7 +809,7 @@ const updateOrdersStatus = async (req, res) => {
 
           // Retrieve client's wallet balance
           const client = await Client.findById(clientId);
-          console.log("client", client);
+          console.log("[updateOrdersStatus] Client before update:", client);
           if (!client) {
             return res.status(404).json({
               message: "Client not found",
@@ -822,12 +823,11 @@ const updateOrdersStatus = async (req, res) => {
           const currentPackingCharge = orderDoc.packingCharge || 0;
           const currentTotalPrice = orderDoc.totalPrice;
 
+          console.log("[updateOrdersStatus] ShippingMethod:", currentShippingMethod, "ShippingCharge:", currentShippingCharge, "PackingCharge:", currentPackingCharge, "TotalPrice:", currentTotalPrice);
+
           if (status === "Cancelled") {
-            if (currentShippingMethod === targetShippingMethodId) {
-              amount_credit = currentTotalPrice;
-            } else {
+              // Always deduct packing charge on cancel
               amount_credit = currentTotalPrice - currentPackingCharge;
-            }
           } else if (status === "Right RTO Return" || status === "Right Customer Return") {
             if (currentShippingMethod === targetShippingMethodId) {
               amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
@@ -838,8 +838,11 @@ const updateOrdersStatus = async (req, res) => {
             amount_credit = 0;
           }
 
+          console.log("[updateOrdersStatus] Calculated amount_credit:", amount_credit);
+
           if (amount_credit > 0) {
             client.walletBalance += amount_credit;
+            console.log("[updateOrdersStatus] Crediting wallet. New balance:", client.walletBalance);
           }
           amount_debit = 0;
 
@@ -858,7 +861,7 @@ const updateOrdersStatus = async (req, res) => {
 
           await newTransaction.save();
         } else {
-          console.log("no need to update");
+          console.log("[updateOrdersStatus] No need to update");
         }
       } else if (revisions === 1) {
         const itemId = ids[i].itemId;
@@ -874,10 +877,12 @@ const updateOrdersStatus = async (req, res) => {
           if (orderDoc.orders[j]._id.equals(itemIdObjectId)) {
             orderStatus = orderDoc.orders[j].status;
             const uc = orderDoc.orders[j].updateCount;
+            console.log("[updateOrdersStatus] Processing order item:", orderDoc.orders[j]._id, "status:", orderStatus, "updateCount:", uc);
             if (orderStatus === "Order Placed" && uc !== 1) {
               const clientId = orderDoc.orders[j].client._id;
 
               const client = await Client.findById(clientId);
+              console.log("[updateOrdersStatus] Client before update:", client);
 
               if (!client) {
                 return res.status(404).json({
@@ -902,7 +907,7 @@ const updateOrdersStatus = async (req, res) => {
                 isLableDownloaded: orderDoc.isLableDownloaded,
               });
 
-              console.log("newOrder", new_order);
+              console.log("[updateOrdersStatus] Creating new order revision for item:", new_order);
               await new_order.save();
 
               let walletBalance = 0;
@@ -913,12 +918,11 @@ const updateOrdersStatus = async (req, res) => {
               const currentPackingCharge = orderDoc.orders[j].packingCharge || 0;
               const currentTotalPrice = orderDoc.orders[j].totalPrice;
 
+              console.log("[updateOrdersStatus] ShippingMethod:", currentShippingMethod, "ShippingCharge:", currentShippingCharge, "PackingCharge:", currentPackingCharge, "TotalPrice:", currentTotalPrice);
+
               if (status === "Cancelled") {
-                if (currentShippingMethod === targetShippingMethodId) {
-                  amount_credit = currentTotalPrice;
-                } else {
+                  // Always deduct packing charge on cancel
                   amount_credit = currentTotalPrice - currentPackingCharge;
-                }
               } else if (status === "Right RTO Return" || status === "Right Customer Return") {
                 if (currentShippingMethod === targetShippingMethodId) {
                   amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
@@ -929,9 +933,12 @@ const updateOrdersStatus = async (req, res) => {
                 amount_credit = 0;
               }
 
+              console.log("[updateOrdersStatus] Calculated amount_credit:", amount_credit);
+
               if (amount_credit > 0) {
                 client.walletBalance += amount_credit;
                 await client.save();
+                console.log("[updateOrdersStatus] Crediting wallet. New balance:", client.walletBalance);
               }
               amount_debit = 0;
               walletBalance = client.walletBalance;
@@ -947,7 +954,7 @@ const updateOrdersStatus = async (req, res) => {
 
               await newTransaction.save();
             } else {
-              console.log("No need to update order item status");
+              console.log("[updateOrdersStatus] No need to update order item status");
             }
           }
         }

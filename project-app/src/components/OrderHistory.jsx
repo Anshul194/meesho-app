@@ -578,6 +578,7 @@ const OrderHistory = () => {
                                   <span style={{ color: '#aaa', fontSize: '12px' }}>No Shipping Label</span>
                                 )}
                               </td>
+                              <td>{item.totalPrice !== undefined ? item.totalPrice : (order.totalPrice !== undefined ? order.totalPrice : "-")}</td>
                             </tr>
                           ))}
 
@@ -665,7 +666,7 @@ const OrderHistory = () => {
                             </td>
                             <td>{order.productPrice}</td>
                             <td>{order.packingCharge}</td>
-                            <td>{order.totalPrice}</td>
+                            <td>{order.totalPrice !== undefined ? order.totalPrice : "-"}</td>
                           </tr>
                         )}
                       </React.Fragment>
