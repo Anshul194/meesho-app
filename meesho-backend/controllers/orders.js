@@ -230,16 +230,14 @@ const createOrder = async (req, res) => {
 const getAllOrders = async (req, res) => {
   try {
     // Extract query parameters for filtering
-    const {
-      clientId,
-      orderNumber,
-      status,
-      from,
-      to,
-      isLableDownloaded,
-      page,
-      limit,
-    } = req.query;
+    const clientId = req.query.clientId || req.params.clientId || "";
+    const orderNumber = req.query.orderNumber || req.params.orderNumber || "";
+    const status = req.query.status || req.params.status || "";
+    const isLableDownloaded = req.query.isLableDownloaded || req.params.isLableDownloaded || "";
+    const page = parseInt(req.query.page || req.params.page) || 1;
+    const limit = parseInt(req.query.limit || req.params.limit) || 10;
+    const from = req.query.from || req.params.from || "";
+    const to = req.query.to || req.params.to || "";
 
     const filter = {};
 
@@ -269,10 +267,11 @@ const getAllOrders = async (req, res) => {
     // Add marketPlace filter if present
     if (req.query.marketPlace) {
       filter.$and = filter.$and || [];
+      const mpRegex = { $regex: new RegExp(req.query.marketPlace, "i") };
       filter.$and.push({
         $or: [
-          { marketPlace: { $regex: new RegExp(req.query.marketPlace, "i") } },
-          { "orders.marketPlace": { $regex: new RegExp(req.query.marketPlace, "i") } }
+          { marketPlace: mpRegex },
+          { "orders.marketPlace": mpRegex }
         ]
       });
     }
@@ -280,11 +279,13 @@ const getAllOrders = async (req, res) => {
     if (status) {
       filter.$and = filter.$and || [];
 
-      if (status === "pending") {
-        filter.$and.push({ "orders.status": "Order Placed" });
-      } else {
-        filter.$and.push({ "orders.status": status });
-      }
+      const targetStatus = status === "pending" ? "Order Placed" : status;
+      filter.$and.push({
+        $or: [
+          { status: targetStatus },
+          { "orders.status": targetStatus }
+        ]
+      });
     }
 
     if (from && to) {
@@ -303,12 +304,12 @@ const getAllOrders = async (req, res) => {
 
     if (isLableDownloaded) {
       filter.$and = filter.$and || [];
-      filter.$and.push({ isLableDownloaded: isLableDownloaded });
+      filter.$and.push({ isLableDownloaded: isLableDownloaded === "true" });
     }
 
     // Pagination parameters
-    const pageNumber = parseInt(page) || 1;
-    const pageSize = parseInt(limit) || 0;
+    const pageNumber = page;
+    const pageSize = limit;
     const skip = (pageNumber - 1) * pageSize;
 
     console.log(filter);
@@ -901,7 +902,11 @@ const updateOrdersStatus = async (req, res) => {
               old_order.updatedAt = new Date();
 
               const new_order = new Order({
-                orders: old_order,
+                orders: [old_order],
+                marketPlace: orderDoc.marketPlace,
+                status: status, // Also set root status
+                labelPath: orderDoc.labelPath,
+                labelName: orderDoc.labelName,
                 clientId: clientId,
                 revisions: 1,
                 isLableDownloaded: orderDoc.isLableDownloaded,
@@ -1366,7 +1371,11 @@ const updateOrdersStatusFromExcel = async (req, res) => {
                   old_order.updatedAt = new Date();
 
                   const new_order = new Order({
-                    orders: old_order,
+                    orders: [old_order],
+                    marketPlace: order.marketPlace,
+                    status: status_to_update, // Also set root status
+                    labelPath: order.labelPath,
+                    labelName: order.labelName,
                     clientId: clientId,
                     revisions: 1,
                     isLableDownloaded: order.isLableDownloaded,

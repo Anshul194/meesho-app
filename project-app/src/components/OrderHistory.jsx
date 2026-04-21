@@ -20,6 +20,16 @@ import Select from "react-select";
 const OrderHistory = () => {
   const userType = localStorage.getItem("user");
   const [marketPlace, setMarketPlace] = useState("");
+  const [status, setStatus] = useState("");
+  const statusOptions = [
+    { value: "", label: "All Status" },
+    { value: "Order Placed", label: "Order Placed" },
+    { value: "Cancelled", label: "Cancelled" },
+    { value: "Right RTO Return", label: "Right RTO Return" },
+    { value: "Right Customer Return", label: "Right Customer Return" },
+    { value: "Wrong RTO Return", label: "Wrong RTO Return" },
+    { value: "Wrong Customer Return", label: "Wrong Customer Return" },
+  ];
   const marketPlaceOptions = [
     { value: "Meesho", label: "Meesho" },
     { value: "Amazon", label: "Amazon" },
@@ -89,6 +99,7 @@ const OrderHistory = () => {
         `limit=${rowsPerPage}`,
         `from=${startDate}`,
         `to=${endDate}`,
+        `status=${status}`,
       ];
 
       if (marketPlace)
@@ -121,7 +132,7 @@ const OrderHistory = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page, rowsPerPage, marketPlace]);
+  }, [page, rowsPerPage, marketPlace, status]);
 
   const handleFileChange = (event, orderId) => {
     const file = event.target.files[0];
@@ -350,6 +361,22 @@ const OrderHistory = () => {
                   }
                   onChange={handleMarketPlaceChange}
                   placeholder="Select Marketplace"
+                />
+              </div>
+              <div className="col-sm-3" style={{ marginTop: "8px", marginBottom: "8px" }}>
+                <Select
+                  options={statusOptions}
+                  isClearable
+                  value={
+                    status
+                      ? { value: status, label: status }
+                      : null
+                  }
+                  onChange={(selected) => {
+                    setStatus(selected ? selected.value : "");
+                    setPage(1);
+                  }}
+                  placeholder="Select Status"
                 />
               </div>
             </div>

@@ -72,6 +72,16 @@ export default function Dorder() {
     trackingLabel: null
   });
   const [marketPlace, setMarketPlace] = useState("");
+  const [status, setStatus] = useState("");
+  const statusOptions = [
+    { value: "", label: "All Status" },
+    { value: "Order Placed", label: "Order Placed" },
+    { value: "Cancelled", label: "Cancelled" },
+    { value: "Right RTO Return", label: "Right RTO Return" },
+    { value: "Right Customer Return", label: "Right Customer Return" },
+    { value: "Wrong RTO Return", label: "Wrong RTO Return" },
+    { value: "Wrong Customer Return", label: "Wrong Customer Return" },
+  ];
   const marketPlaceOptions = [
     { value: "Meesho", label: "Meesho" },
     { value: "Amazon", label: "Amazon" },
@@ -154,6 +164,7 @@ export default function Dorder() {
         `limit=${rowsPerPage}`,
         `from=${startDate}`,
         `to=${endDate}`,
+        `status=${status}`,
         `isLableDownloaded=true`,
       ];
 
@@ -184,7 +195,7 @@ export default function Dorder() {
   useEffect(() => {
     fetchOrders();
     fetchClients();
-  }, [selectedClient, page, rowsPerPage, marketPlace]);
+  }, [selectedClient, page, rowsPerPage, marketPlace, status]);
 
   // const handleFilter = (status) => {
   //   const selectedOrders = orders.filter((order) => order.selected);
@@ -663,6 +674,22 @@ export default function Dorder() {
                   value={marketPlace ? { value: marketPlace, label: marketPlace } : null}
                   onChange={handleMarketPlaceChange}
                   placeholder="Select Marketplace"
+                />
+              </div>
+              <div className="col-sm-3" style={{ marginTop: "8px" }}>
+                <Select
+                  options={statusOptions}
+                  isClearable
+                  value={
+                    status
+                      ? { value: status, label: status }
+                      : null
+                  }
+                  onChange={(selected) => {
+                    setStatus(selected ? selected.value : "");
+                    setPage(1);
+                  }}
+                  placeholder="Select Status"
                 />
               </div>
               <div className="col-sm-6">
