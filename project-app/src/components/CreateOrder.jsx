@@ -105,12 +105,19 @@ const CreateOrder = () => {
 
   const handleBulkOrderSubmit = async () => {
     try {
+      // Require marketplace selection before allowing bulk upload
+      if (!marketPlace) {
+        alert("Please select a marketplace.");
+        return;
+      }
+
       handleOpen3();
       const token = localStorage.getItem("token");
       const clientId = localStorage.getItem("clientId");
 
       if (!bulkOrderFile) {
         alert("Please select a file to upload.");
+        handleClose3();
         return;
       }
 
@@ -394,6 +401,10 @@ const CreateOrder = () => {
   // };
 
   const placeOrder = async () => {
+    if (!marketPlace) {
+      alert("Please select a marketplace.");
+      return;
+    }
     handleOpen3();
     try {
       const token = localStorage.getItem("token");
