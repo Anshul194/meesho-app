@@ -37,7 +37,7 @@ const WalletHistory = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalDocs, setTotalDocs] = useState(null);
-  const [searchKey, setSearchKey] = useState("Amount"); // Default search key
+  const [searchKey, setSearchKey] = useState(""); // Default search key
   const [searchValue, setSearchValue] = useState("");
   const [excelData, setExcelData] = useState([]);
   const [open3, setOpen3] = React.useState(false);
@@ -200,6 +200,7 @@ const WalletHistory = () => {
                   value={searchKey}
                   onChange={handleSearchKeyChange}
                 >
+                  <option value="">Select a filter option</option>
                   <option value="Amount">Amount</option>
                   <option value="transactionNo">Transaction No</option>
                   <option value="marketPlaceOrderNumber">
@@ -208,14 +209,23 @@ const WalletHistory = () => {
                 </select>
               </div>
               <div className="col-sm-3" style={{ marginTop: "8px" }}>
-                <input
-                  className="form-control "
-                  type="text"
-                  name="text"
-                  value={searchValue}
-                  onChange={handleSearchValueChange}
-                  placeholder="Search Value"
-                />
+                {searchKey === "" ? (
+                  <input
+                    className="form-control"
+                    type="text"
+                    disabled
+                    placeholder="Select a filter first"
+                  />
+                ) : (
+                  <input
+                    className="form-control "
+                    type="text"
+                    name="text"
+                    value={searchValue}
+                    onChange={handleSearchValueChange}
+                    placeholder="Search Value"
+                  />
+                )}
               </div>
               <div
                 style={{ display: "flex", gap: "10px", marginTop: "8px" }}
@@ -244,7 +254,7 @@ const WalletHistory = () => {
                   onClick={() => {
                     setStartDate("");
                     setEndDate("");
-                    setSearchKey("Amount");
+                    setSearchKey("");
                     setSearchValue("");
                   }}
                   style={{
