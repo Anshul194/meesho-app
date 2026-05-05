@@ -11,6 +11,7 @@ const Transaction = require("../models/transaction");
 const xlsx = require("xlsx");
 const PDFMerger = require("pdf-merger-js");
 const MasterSKU = require("../models/masterSKU");
+const ShippingMethod = require("../models/shippingMethod");
 const { Order } = require("../models/order");
 
 const path = require("path");
@@ -319,6 +320,49 @@ const getAllOrders = async (req, res) => {
       .skip(skip)
       .limit(pageSize);
 
+    // Collect all shippingMethod ids present in the orders response
+    const shippingMethodIds = new Set();
+    orders.forEach((ord) => {
+      if (Array.isArray(ord.orders)) {
+        ord.orders.forEach((it) => {
+          if (it && it.shippingMethod) shippingMethodIds.add(it.shippingMethod.toString());
+        });
+      }
+      if (ord.shippingMethod) shippingMethodIds.add(ord.shippingMethod.toString());
+    });
+
+    // Query only the shipping methods we actually need
+    let shippingMethodMap = {};
+    if (shippingMethodIds.size > 0) {
+      try {
+        const idsArray = Array.from(shippingMethodIds).map((id) => id);
+        const methods = await ShippingMethod.find({ _id: { $in: idsArray } }).lean();
+        methods.forEach((m) => {
+          if (m && m._id) shippingMethodMap[m._id.toString()] = m.name;
+        });
+      } catch (err) {
+        console.error("Failed to fetch shipping methods by ids:", err);
+      }
+    }
+
+    // Replace shippingMethod ids with human-readable names in the returned orders
+    const mappedOrders = orders.map((ord) => {
+      const o = ord.toObject ? ord.toObject() : JSON.parse(JSON.stringify(ord));
+      if (Array.isArray(o.orders)) {
+        o.orders = o.orders.map((it) => {
+          if (it && it.shippingMethod) {
+            const mapped = shippingMethodMap[it.shippingMethod] || it.shippingMethod;
+            return { ...it, shippingMethod: mapped };
+          }
+          return it;
+        });
+      }
+      if (o.shippingMethod) {
+        o.shippingMethod = shippingMethodMap[o.shippingMethod] || o.shippingMethod;
+      }
+      return o;
+    });
+
     // console.log(orders);
 
     // Check if there are no orders
@@ -333,10 +377,10 @@ const getAllOrders = async (req, res) => {
     // Count total number of orders (for pagination)
     const totalOrders = await Order.countDocuments(filter);
 
-    // Return the list of orders
+    // Return the list of orders (with shipping method names populated)
     res.status(200).json({
       message: "Orders retrieved successfully",
-      data: orders,
+      data: mappedOrders,
       success: true,
       currentPage: pageNumber,
       totalOrders,
