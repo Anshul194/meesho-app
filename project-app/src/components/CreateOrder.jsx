@@ -43,7 +43,7 @@ const CreateOrder = () => {
       masterSKU: "",
     },
   ]);
-  const [selectedMasterSKU, setSelectedMasterSKU] = useState(null);
+  
   const [open2, setOpen2] = React.useState(false);
   const [snack, setSnack] = React.useState("");
   const [snackType, setSnackType] = React.useState("success");
@@ -230,6 +230,24 @@ const CreateOrder = () => {
     fetchProducts(); // Fetch products when the component mounts
     fetchClientData(); // Fetch client data when the component mounts
   }, []);
+
+  // Recalculate shipping charge as (method.charge * total quantity)
+  function recalcShippingCharge(methodId) {
+    const method = shippingMethods.find((m) => m._id === methodId);
+    if (!method) {
+      setShippingCharge(0);
+      return;
+    }
+    const totalQty = products.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
+    setShippingCharge(Number(method.charge || 0) * totalQty);
+  }
+
+  // Recalculate shipping charge whenever products or selected shipping method changes
+  useEffect(() => {
+    if (selectedShippingMethod) {
+      recalcShippingCharge(selectedShippingMethod);
+    }
+  }, [products, selectedShippingMethod]);
 
   useEffect(() => {
     if (marketPlace !== "Meesho") {
@@ -544,7 +562,7 @@ const CreateOrder = () => {
             masterSKU: "",
           },
         ]);
-        setSelectedMasterSKU(null);
+        
         setIsExploading(true);
       } else {
         setSnack(data.message);
@@ -611,12 +629,7 @@ const CreateOrder = () => {
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setLabel(file);
-    }
-  };
+  
 
   return (
     <>
@@ -772,9 +785,9 @@ const CreateOrder = () => {
                             id="shippingMethodSelect"
                             value={selectedShippingMethod || ""}
                             onChange={e => {
-                              setSelectedShippingMethod(e.target.value);
-                              const method = shippingMethods.find(m => m._id === e.target.value);
-                              setShippingCharge(method ? method.charge : 0);
+                              const val = e.target.value;
+                              setSelectedShippingMethod(val);
+                              recalcShippingCharge(val);
                             }}
                           >
                             <option value="">Select Shipping Method</option>
