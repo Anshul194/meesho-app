@@ -67,6 +67,13 @@ const CreateOrder = () => {
   const handleOpen3 = () => {
     setOpen3(true);
   };
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [validationMessage, setValidationMessage] = useState("");
+  const showValidation = (msg) => {
+    setValidationMessage(msg);
+    setValidationOpen(true);
+  };
+  const handleValidationClose = () => setValidationOpen(false);
 
   const fetchClientData = async () => {
     try {
@@ -107,7 +114,7 @@ const CreateOrder = () => {
     try {
       // Require marketplace selection before allowing bulk upload
       if (!marketPlace) {
-        alert("Please select a marketplace.");
+        showValidation("Please select a marketplace.");
         return;
       }
 
@@ -116,7 +123,7 @@ const CreateOrder = () => {
       const clientId = localStorage.getItem("clientId");
 
       if (!bulkOrderFile) {
-        alert("Please select a file to upload.");
+        showValidation("Please select a file to upload.");
         handleClose3();
         return;
       }
@@ -205,7 +212,7 @@ const CreateOrder = () => {
       ]);
     } else {
       // Optionally, you can provide feedback to the user if details are missing
-      alert("Please fill in all details in previous products.");
+      showValidation("Please fill in all details in previous products.");
     }
   };
 
@@ -401,8 +408,9 @@ const CreateOrder = () => {
   // };
 
   const placeOrder = async () => {
-    if (!marketPlace) {
-      alert("Please select a marketplace.");
+    console.log("placeOrder clicked", marketPlace);
+    if (!marketPlace || (typeof marketPlace === "string" && marketPlace.trim() === "")) {
+      showValidation("Please select a marketplace.");
       return;
     }
     handleOpen3();
@@ -424,9 +432,7 @@ const CreateOrder = () => {
       if (!allProductsFilled || !label) {
         // check here for label as well
         handleClose3();
-        alert(
-          "Please fill in all details for all products before placing the order."
-        );
+        showValidation("Please fill in all details for all products before placing the order.");
         return; // Exit the function if any product is incomplete
       }
 
@@ -478,7 +484,7 @@ const CreateOrder = () => {
         if (selectedShippingMethod === "69e60bc22e8678f757162c5f") {
           if (!label || !ownLabel) {
             handleClose3();
-            alert("Please select both Label and Shipping Label files for this shipping method.");
+            showValidation("Please select both Label and Shipping Label files for this shipping method.");
             return;
           }
           formData.append("label", label);
@@ -486,7 +492,7 @@ const CreateOrder = () => {
         } else {
           if (!label) {
             handleClose3();
-            alert("Please select the Label file.");
+            showValidation("Please select the Label file.");
             return;
           }
           formData.append("label", label);
@@ -495,7 +501,7 @@ const CreateOrder = () => {
         // For Meesho, only label is required
         if (!label) {
           handleClose3();
-          alert("Please select the Label file.");
+          showValidation("Please select the Label file.");
           return;
         }
         formData.append("label", label);
@@ -871,7 +877,11 @@ const CreateOrder = () => {
               <br />
 
               <div className="d-flex flex-row justify-content-center mt-5 ">
-                <button className="placeo" onClick={placeOrder}>
+                <button
+                  type="button"
+                  className="placeo"
+                  onClick={placeOrder}
+                >
                   Place order
                 </button>
               </div>
@@ -880,32 +890,36 @@ const CreateOrder = () => {
                 <h4 className="or">OR</h4>
               </div>
 
-              <h4 className="head01 mt-3 mb-4">Create Bulk Order</h4>
+              {marketPlace !== "Amazon" && (
+                <>
+                  <h4 className="head01 mt-3 mb-4">Create Bulk Order</h4>
 
-              <form>
-                <div className="form-group">
-                  <label htmlFor="bulkOrderFileInput" className="amount">
-                    Upload Orders in Bulk
-                  </label>
-                  <input
-                    type="file"
-                    className="form-control-file"
-                    id="bulkOrderFileInput"
-                    onChange={handleBulkOrderFileChange}
-                    accept=".xlsx, .xls"
-                  />
-                </div>
-              </form>
-              <button className="placeo1" onClick={handleBulkOrderSubmit}>
-                Submit
-              </button>
+                  <form>
+                    <div className="form-group">
+                      <label htmlFor="bulkOrderFileInput" className="amount">
+                        Upload Orders in Bulk
+                      </label>
+                      <input
+                        type="file"
+                        className="form-control-file"
+                        id="bulkOrderFileInput"
+                        onChange={handleBulkOrderFileChange}
+                        accept=".xlsx, .xls"
+                      />
+                    </div>
+                  </form>
+                  <button className="placeo1" onClick={handleBulkOrderSubmit}>
+                    Submit
+                  </button>
 
-              <a
-                href={`${API_ENDPOINT}/S4S-Templates/bulk_order_template.xlsx`}
-                download={true}
-              >
-                <h6>Download Template</h6>
-              </a>
+                  <a
+                    href={`${API_ENDPOINT}/S4S-Templates/bulk_order_template.xlsx`}
+                    download={true}
+                  >
+                    <h6>Download Template</h6>
+                  </a>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -927,6 +941,24 @@ const CreateOrder = () => {
           <DialogActions>
             <Button onClick={handleClose} color="success" variant="contained">
               Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={validationOpen}
+          onClose={handleValidationClose}
+          aria-labelledby="validation-dialog-title"
+          aria-describedby="validation-dialog-description"
+        >
+          <DialogTitle id="validation-dialog-title">Required fields</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="validation-dialog-description">
+              {validationMessage}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleValidationClose} color="primary" variant="contained">
+              OK
             </Button>
           </DialogActions>
         </Dialog>
