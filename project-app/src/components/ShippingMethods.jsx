@@ -12,6 +12,7 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 
 export default function ShippingMethods() {
+  const DEFAULT_METHOD_NAMES = ["Style4Sure Shipping", "My Own Shipping"];
   const [methods, setMethods] = useState([]);
   const [name, setName] = useState("");
   const [charge, setCharge] = useState("");
@@ -150,14 +151,16 @@ export default function ShippingMethods() {
                 >
                   Edit
                 </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  color="error"
-                  onClick={() => handleDelete(m._id)}
-                >
-                  Delete
-                </Button>
+                {!DEFAULT_METHOD_NAMES.includes(m.name) && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                    onClick={() => handleDelete(m._id)}
+                  >
+                    Delete
+                  </Button>
+                )}
               </td>
             </tr>
           ))}

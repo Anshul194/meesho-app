@@ -363,13 +363,9 @@ export default function Dorder() {
       formData.append("orderId", currentOrder.orderId);
       if (currentOrder.itemId) formData.append("itemId", currentOrder.itemId);
       formData.append("revisions", currentOrder.revisions);
-      formData.append("marketId", trackingData.marketId);
+      // Only send the fields required: trackingId and shippingPartnerName
       formData.append("trackingId", trackingData.trackingId);
-      formData.append("trackingUrl", trackingData.trackingUrl);
       formData.append("shippingPartnerName", trackingData.shippingPartnerName);
-      if (trackingData.trackingLabel) {
-        formData.append("trackingLabel", trackingData.trackingLabel);
-      }
 
       const response = await fetch(`${API_ENDPOINT}/api/v1/orders/update-shipping-info`, {
         method: "POST",
@@ -1488,27 +1484,11 @@ export default function Dorder() {
             </Typography>
             <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
               <div className="form-group">
-                <label>Market Id</label>
-                <input
-                  className="form-control"
-                  value={trackingData.marketId}
-                  onChange={(e) => setTrackingData({ ...trackingData, marketId: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
                 <label>Tracking ID</label>
                 <input
                   className="form-control"
                   value={trackingData.trackingId}
                   onChange={(e) => setTrackingData({ ...trackingData, trackingId: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label>Tracking URL</label>
-                <input
-                  className="form-control"
-                  value={trackingData.trackingUrl}
-                  onChange={(e) => setTrackingData({ ...trackingData, trackingUrl: e.target.value })}
                 />
               </div>
               <div className="form-group">
@@ -1519,26 +1499,9 @@ export default function Dorder() {
                   onChange={(e) => setTrackingData({ ...trackingData, shippingPartnerName: e.target.value })}
                 />
               </div>
-              <div className="form-group">
-                <label>Tracking Label (File)</label>
-                <input
-                  type="file"
-                  className="form-control"
-                  onChange={(e) => setTrackingData({ ...trackingData, trackingLabel: e.target.files[0] })}
-                />
-              </div>
               <Button variant="contained" color="warning" onClick={handleTrackingUpdateSubmit}>
                 Update
               </Button>
-              {trackingData.trackingLabelPath && (
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  onClick={() => window.open(`${API_ENDPOINT}/${trackingData.trackingLabelPath.replace(/\\/g, '/')}`, '_blank')}
-                >
-                  Preview Tracking Label
-                </Button>
-              )}
             </div>
           </Box>
         </Modal>
