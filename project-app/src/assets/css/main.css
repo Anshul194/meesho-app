@@ -3456,7 +3456,7 @@
 
             ul.choose-skin {
                 display: flex;
-                justify-content: start;
+                justify-content: flex-start;
             }
 
             ul.choose-skin li {

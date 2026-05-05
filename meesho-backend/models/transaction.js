@@ -149,6 +149,12 @@ const transactionSchema = new mongoose.Schema(
   { timestamps: { createdAt: true, updatedAt: true } }
 );
 
+transactionSchema.index({ createdAt: -1 });
+transactionSchema.index({ client: 1, createdAt: -1 });
+transactionSchema.index({ transactionNo: 1 });
+transactionSchema.index({ marketPlaceOrderNumber: 1 });
+transactionSchema.index({ "order.marketPlaceOrderNumber": 1 });
+
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
 module.exports = Transaction;

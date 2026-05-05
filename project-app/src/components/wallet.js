@@ -78,10 +78,11 @@ export default function Wallet() {
 
   const fetchTransactions = async (clientId) => {
     let url = `${API_ENDPOINT}/api/v1/transactions/all`;
+    const finalSearchKey = searchValue.trim() ? searchKey : "";
     if (clientId === "all") {
-      url = `${API_ENDPOINT}/api/v1/transactions/all?page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${searchKey}&searchValue=${searchValue}`;
+      url = `${API_ENDPOINT}/api/v1/transactions/all?page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${finalSearchKey}&searchValue=${searchValue}`;
     } else {
-      url = `${API_ENDPOINT}/api/v1/transactions/all?clientId=${clientId}&page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${searchKey}&searchValue=${searchValue}`;
+      url = `${API_ENDPOINT}/api/v1/transactions/all?clientId=${clientId}&page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${finalSearchKey}&searchValue=${searchValue}`;
     }
 
     try {
@@ -150,11 +151,12 @@ export default function Wallet() {
   const applyDateFilter = () => {
     // Update the URL according to the selected search key and value
     let url;
+    const finalSearchKey = searchValue.trim() ? searchKey : "";
 
     if (selectedClient === "all") {
-      url = `${API_ENDPOINT}/api/v1/transactions/all?page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${searchKey}&searchValue=${searchValue}`;
+      url = `${API_ENDPOINT}/api/v1/transactions/all?page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${finalSearchKey}&searchValue=${searchValue}`;
     } else {
-      url = `${API_ENDPOINT}/api/v1/transactions/all?clientId=${selectedClient}&page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${searchKey}&searchValue=${searchValue}`;
+      url = `${API_ENDPOINT}/api/v1/transactions/all?clientId=${selectedClient}&page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${finalSearchKey}&searchValue=${searchValue}`;
     }
 
     // const url = `${API_ENDPOINT}/api/v1/transactions/all?clientId=${selectedClient}&page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${searchKey}&searchValue=${searchValue}`;
@@ -192,10 +194,11 @@ export default function Wallet() {
         throw new Error("Token not found in localStorage");
       }
 
+      const finalSearchKey = searchValue.trim() ? searchKey : "";
       const response = await fetch(
         `${API_ENDPOINT}/api/v1/transactions/all?clientId=${
           selectedClient || ""
-        }&page=${page}&limit=${0}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${searchKey}&searchValue=${searchValue}`,
+        }&page=${page}&limit=${0}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${finalSearchKey}&searchValue=${searchValue}`,
         {
           headers: {
             "x-access-token": token,

@@ -56,9 +56,9 @@ const WalletHistory = () => {
       // Retrieve the token from local storage
       const token = localStorage.getItem("token");
       const clientId = localStorage.getItem("clientId");
-
+      const finalSearchKey = searchValue.trim() ? searchKey : "";
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/transactions/all?clientId=${clientId}&page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${searchKey}&searchValue=${searchValue}`,
+        `${API_ENDPOINT}/api/v1/transactions/all?clientId=${clientId}&page=${page}&limit=${rowsPerPage}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${finalSearchKey}&searchValue=${searchValue}`,
         {
           method: "GET",
           headers: {
@@ -104,9 +104,10 @@ const WalletHistory = () => {
       if (!token) {
         throw new Error("Token not found in localStorage");
       }
+      const finalSearchKey = searchValue.trim() ? searchKey : "";
 
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/transactions/all?clientId=${clientId}&page=${page}&limit=${0}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${searchKey}&searchValue=${searchValue}`,
+        `${API_ENDPOINT}/api/v1/transactions/all?clientId=${clientId}&page=${page}&limit=${0}&dateFrom=${startDate}&dateTo=${endDate}&searchKey=${finalSearchKey}&searchValue=${searchValue}`,
         {
           headers: {
             "x-access-token": token,

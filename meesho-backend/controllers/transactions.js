@@ -136,12 +136,13 @@ const getAllTransactions = async (req, res) => {
       }
     }
 
-    // Fetch transactions with pagination and filters
-    let transactionsQuery = Transaction.find(filter)
-      .populate("client")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    console.log("Filter: ", JSON.stringify(filter), "Limit:", limit, "Skip:", skip);
+
+    let transactionsQuery = Transaction.find(filter).populate("client").skip(skip).limit(limit);
+    
+    if (limit > 0) {
+      transactionsQuery = transactionsQuery.sort({ _id: -1 });
+    }
 
     // Count total number of transactions (for pagination)
     const totalTransactions = await Transaction.countDocuments(filter);
@@ -156,18 +157,18 @@ const getAllTransactions = async (req, res) => {
         transactions,
         totalTransactions,
         currentPage: page,
-        totalPages: Math.ceil(totalTransactions / limit),
+        totalPages: limit > 0 ? Math.ceil(totalTransactions / limit) : 1,
       });
     }
 
     // Return the transactions as JSON response
     return res.status(200).json({
-      message: "Transactions fetched successfully",
+      message: "Transactions fetched successfully.",
       success: true,
       transactions,
       totalTransactions,
       currentPage: page,
-      totalPages: Math.ceil(totalTransactions / limit),
+      totalPages: limit > 0 ? Math.ceil(totalTransactions / limit) : 1,
     });
   } catch (error) {
     // If an error occurs, send an error response
