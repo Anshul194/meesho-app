@@ -53,6 +53,8 @@ export default function Pending() {
 
   const [searchValue, setSearchValue] = useState("");
   const [marketPlace, setMarketPlace] = useState("");
+  const [shippingMethod, setShippingMethod] = useState("");
+  const [shippingMethods, setShippingMethods] = useState([]);
   const marketPlaceOptions = [
     { value: "Meesho", label: "Meesho" },
     { value: "Amazon", label: "Amazon" },
@@ -185,6 +187,7 @@ export default function Pending() {
         `status=pending`
       ];
       if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+      if (shippingMethod) queryParams.push(`shippingMethod=${encodeURIComponent(shippingMethod)}`);
       const response = await fetch(
         `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
         {
@@ -234,7 +237,26 @@ export default function Pending() {
   useEffect(() => {
     fetchOrders();
     fetchClients();
-  }, [selectedClient, page, rowsPerPage, marketPlace]);
+  }, [selectedClient, page, rowsPerPage, marketPlace, shippingMethod]);
+
+  useEffect(() => {
+    fetchShippingMethods();
+  }, []);
+
+  const fetchShippingMethods = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_ENDPOINT}/api/v1/shipping-methods`, {
+        headers: { "x-access-token": token },
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.data)) {
+        setShippingMethods(data.data.map((m) => ({ value: m.name, label: m.name })));
+      }
+    } catch (err) {
+      console.error("Failed to fetch shipping methods:", err);
+    }
+  };
 
   const applyDateFilter = () => {
     fetchOrders();
@@ -286,10 +308,20 @@ export default function Pending() {
         throw new Error("Token not found in localStorage");
       }
 
+      const queryParams = [
+        `clientId=${selectedClient || ""}`,
+        `orderNumber=${searchValue}`,
+        `page=${page}`,
+        `limit=${0}`,
+        `from=${startDate}`,
+        `to=${endDate}`,
+        `isLableDownloaded=false`,
+        `status=pending`,
+      ];
+      if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+      if (shippingMethod) queryParams.push(`shippingMethod=${encodeURIComponent(shippingMethod)}`);
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${
-          selectedClient || ""
-        }&orderNumber=${searchValue}&page=${page}&limit=${0}&from=${startDate}&to=${endDate}&isLableDownloaded=false&status=pending`,
+        `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
         {
           headers: {
             "x-access-token": token,
@@ -491,6 +523,18 @@ export default function Pending() {
                   placeholder="Select Marketplace"
                 />
               </div>
+              <div className="col-sm-3" style={{ marginTop: "8px" }}>
+                <Select
+                  options={shippingMethods}
+                  isClearable
+                  value={shippingMethod ? { value: shippingMethod, label: shippingMethod } : null}
+                  onChange={(selected) => {
+                    setShippingMethod(selected ? selected.value : "");
+                    setPage(1);
+                  }}
+                  placeholder="Select Shipping Method"
+                />
+              </div>
             </div>
             <div
               className="row"
@@ -660,7 +704,13 @@ export default function Pending() {
                     <th>Date & Time</th>
                     <th>Product Details</th>
                     <th>Product SKU</th>
+                    <th>Marketplace</th>
+                    <th>Status</th>
+                    <th>Shipping Method</th>
                     <th>Quantity</th>
+                    <th>Packing Charge</th>
+                    <th>Shipping Charge</th>
+                    <th>Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -755,12 +805,18 @@ export default function Pending() {
                                   {item.product?.productSKU}
                                 </address>
                               </td>
+                              <td>{order.marketPlace || "-"}</td>
+                              <td>{item.status || "-"}</td>
+                              <td>{item.shippingMethod || "-"}</td>
                               <td>
                                 <span className="phone">
                                   <i className="zmdi zmdi-phone m-r-10"></i>
                                   {item.quantity}
                                 </span>
                               </td>
+                              <td>{item.packingCharge ?? "-"}</td>
+                              <td>{item.shippingCharge ?? "-"}</td>
+                              <td>{item.totalPrice ?? "-"}</td>
                             </tr>
                           ))}
 
@@ -840,12 +896,18 @@ export default function Pending() {
                                 {order.product?.productSKU}
                               </address>
                             </td>
+                            <td>{order.marketPlace || "-"}</td>
+                            <td>{order.status || "-"}</td>
+                            <td>{order.shippingMethod || "-"}</td>
                             <td>
                               <span className="phone">
                                 <i className="zmdi zmdi-phone m-r-10"></i>
                                 {order.quantity}
                               </span>
                             </td>
+                            <td>{order.packingCharge ?? "-"}</td>
+                            <td>{order.shippingCharge ?? "-"}</td>
+                            <td>{order.totalPrice ?? "-"}</td>
                           </tr>
                         )}
                       </React.Fragment>
