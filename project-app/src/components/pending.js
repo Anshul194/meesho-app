@@ -403,6 +403,8 @@ export default function Pending() {
 
       const token = localStorage.getItem("token");
       setRequestedDateTime(new Date());
+      setPercentCompleted(0);
+      handleClickOpen2(); // ✅ Open modal BEFORE request so progress bar is visible
 
       let idsToApi;
       if (selectAll) {
@@ -428,15 +430,12 @@ export default function Pending() {
             const percentCompleted1 = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
-
             setPercentCompleted(percentCompleted1);
-            // Update your progress bar here using the percentCompleted value
           },
         }
       );
 
       if (response.data && response.data instanceof Blob) {
-        handleClickOpen2();
         const blob = new Blob([response.data], { type: "application/pdf" });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -450,19 +449,15 @@ export default function Pending() {
         fetchOrders();
         setPercentCompleted(0);
         setSelectAll(false);
-        // setSnack(response.data.message);
-        // setSnackType("success");
-        // handleSnackOpen();
       } else {
-        // setSnack("No labels to download");
-        // setSnackType("error");
-        // handleSnackOpen();
-        handleSnackClose();
-        setPercentCompleted(0);
         handleClose2();
+        setPercentCompleted(0);
         setSelectAll(false);
       }
-    } catch (error) {}
+    } catch (error) {
+      handleClose2();
+      setPercentCompleted(0);
+    }
   };
 
   const handleSentToDownloadedOrders = async () => {
