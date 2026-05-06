@@ -895,31 +895,67 @@ const updateOrdersStatus = async (req, res) => {
           }
 
           const targetShippingMethodId = "69e60bb32e8678f757162c5c";
-          const currentShippingMethod = orderDoc.shippingMethod;
-          const currentShippingCharge = orderDoc.shippingCharge || 0;
+          const methodVal = String(orderDoc.shippingMethod || "");
+          let currentShippingCharge = orderDoc.shippingCharge || 0;
           const currentPackingCharge = orderDoc.packingCharge || 0;
-          const currentTotalPrice = orderDoc.totalPrice;
+          const currentTotalPrice = orderDoc.totalPrice || 0;
 
-          console.log("[updateOrdersStatus] ShippingMethod:", currentShippingMethod, "ShippingCharge:", currentShippingCharge, "PackingCharge:", currentPackingCharge, "TotalPrice:", currentTotalPrice);
+          // Resolve actual shipping method if it's Style4Sure
+          let isStyle4Sure = false;
+          if (
+            methodVal === targetShippingMethodId || 
+            methodVal.toLowerCase().includes("style4sure") || 
+            (orderDoc.marketPlaceOrderNumber && orderDoc.marketPlaceOrderNumber.toUpperCase().includes("S4S"))
+          ) {
+            isStyle4Sure = true;
+            // Fallback for shipping charge if it's 0 (common in bulk uploads)
+            if (currentShippingCharge === 0) {
+              try {
+                const method = await ShippingMethod.findOne({
+                  $or: [
+                    { _id: mongoose.isValidObjectId(methodVal) ? methodVal : new mongoose.Types.ObjectId() },
+                    { name: /Style4sure/i }
+                  ]
+                });
+                if (method) currentShippingCharge = method.charge;
+              } catch (e) {
+                console.error("Style4Sure charge lookup failed:", e);
+              }
+            }
+          }
 
-          if (status === "Cancelled") {
-            // Always deduct packing charge on cancel
-            amount_credit = currentTotalPrice - currentPackingCharge;
-          } else if (status === "Right RTO Return" || status === "Right Customer Return") {
-            if (currentShippingMethod === targetShippingMethodId) {
+          console.log("[updateOrdersStatus] ShippingMethod Info:", { isStyle4Sure, currentShippingCharge, currentPackingCharge, currentTotalPrice });
+
+          const statusLower = status.toLowerCase();
+
+          if (isStyle4Sure) {
+            // Style4Sure Shipping Logic
+            if (statusLower.includes("cancelled")) {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return")) {
+              // Refund = Product - Shipping (Double deduction: 1x forward + 1x return)
+              amount_credit = currentTotalPrice - (currentPackingCharge + 2 * currentShippingCharge);
+            } else if (statusLower.includes("right customer return")) {
               amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
             } else {
-              amount_credit = currentTotalPrice - currentPackingCharge;
+              amount_credit = 0;
             }
           } else {
-            amount_credit = 0;
+            // Standard Logic for other shipping methods
+            if (statusLower.includes("cancelled")) {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return") || statusLower.includes("right customer return")) {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            } else {
+              amount_credit = 0;
+            }
           }
 
           console.log("[updateOrdersStatus] Calculated amount_credit:", amount_credit);
 
-          if (amount_credit > 0) {
+          if (amount_credit !== 0) {
             client.walletBalance += amount_credit;
-            console.log("[updateOrdersStatus] Crediting wallet. New balance:", client.walletBalance);
+            console.log("[updateOrdersStatus] Updating wallet. New balance:", client.walletBalance);
           }
           amount_debit = 0;
 
@@ -994,32 +1030,68 @@ const updateOrdersStatus = async (req, res) => {
               let walletBalance = 0;
               let amount_credit = 0;
               const targetShippingMethodId = "69e60bb32e8678f757162c5c";
-              const currentShippingMethod = orderDoc.orders[j].shippingMethod;
-              const currentShippingCharge = orderDoc.orders[j].shippingCharge || 0;
+              const methodVal = String(orderDoc.orders[j].shippingMethod || "");
+              let currentShippingCharge = orderDoc.orders[j].shippingCharge || 0;
               const currentPackingCharge = orderDoc.orders[j].packingCharge || 0;
-              const currentTotalPrice = orderDoc.orders[j].totalPrice;
+              const currentTotalPrice = orderDoc.orders[j].totalPrice || 0;
 
-              console.log("[updateOrdersStatus] ShippingMethod:", currentShippingMethod, "ShippingCharge:", currentShippingCharge, "PackingCharge:", currentPackingCharge, "TotalPrice:", currentTotalPrice);
+              // Resolve actual shipping method if it's Style4Sure
+              let isStyle4Sure = false;
+              if (
+                methodVal === targetShippingMethodId || 
+                methodVal.toLowerCase().includes("style4sure") || 
+                (orderDoc.orders[j].marketPlaceOrderNumber && orderDoc.orders[j].marketPlaceOrderNumber.toUpperCase().includes("S4S"))
+              ) {
+                isStyle4Sure = true;
+                // Fallback for shipping charge if it's 0 (common in bulk uploads)
+                if (currentShippingCharge === 0) {
+                  try {
+                    const method = await ShippingMethod.findOne({
+                      $or: [
+                        { _id: mongoose.isValidObjectId(methodVal) ? methodVal : new mongoose.Types.ObjectId() },
+                        { name: /Style4sure/i }
+                      ]
+                    });
+                    if (method) currentShippingCharge = method.charge;
+                  } catch (e) {
+                    console.error("Style4Sure charge lookup failed:", e);
+                  }
+                }
+              }
 
-              if (status === "Cancelled") {
-                // Always deduct packing charge on cancel
-                amount_credit = currentTotalPrice - currentPackingCharge;
-              } else if (status === "Right RTO Return" || status === "Right Customer Return") {
-                if (currentShippingMethod === targetShippingMethodId) {
+              console.log("[updateOrdersStatus] ShippingMethod Info (Item):", { isStyle4Sure, currentShippingCharge, currentPackingCharge, currentTotalPrice });
+
+              const statusLower = status.toLowerCase();
+
+              if (isStyle4Sure) {
+                // Style4Sure Shipping Logic
+                if (statusLower.includes("cancelled")) {
+                  amount_credit = currentTotalPrice - currentPackingCharge;
+                } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return")) {
+                  // Refund = Product - Shipping (Double deduction: 1x forward + 1x return)
+                  amount_credit = currentTotalPrice - (currentPackingCharge + 2 * currentShippingCharge);
+                } else if (statusLower.includes("right customer return")) {
                   amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
                 } else {
-                  amount_credit = currentTotalPrice - currentPackingCharge;
+                  amount_credit = 0;
                 }
               } else {
-                amount_credit = 0;
+                // Standard Logic for other shipping methods
+                if (statusLower.includes("cancelled")) {
+                  amount_credit = currentTotalPrice - currentPackingCharge;
+                } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return") || statusLower.includes("right customer return")) {
+                  amount_credit = currentTotalPrice - currentPackingCharge;
+                } else {
+                  amount_credit = 0;
+                }
               }
 
               console.log("[updateOrdersStatus] Calculated amount_credit:", amount_credit);
 
-              if (amount_credit > 0) {
+              if (amount_credit !== 0) {
                 client.walletBalance += amount_credit;
                 await client.save();
-                console.log("[updateOrdersStatus] Crediting wallet. New balance:", client.walletBalance);
+                console.log("[updateOrdersStatus] Updating wallet. New balance:", client.walletBalance);
               }
               amount_debit = 0;
               walletBalance = client.walletBalance;
@@ -1321,7 +1393,7 @@ const updateOrdersStatusFromExcel = async (req, res) => {
     // Loop through each order ID
     for (let i = 0; i < orders.length; i++) {
       const market_place_order_number = orders[i].marketPlaceOrderNumber;
-      const status_to_update = orders[i].status;
+      const status_to_update = (orders[i].status || "").trim();
       console.log("market_place_order_number", market_place_order_number);
       console.log("status_to_update", status_to_update);
 
@@ -1362,43 +1434,77 @@ const updateOrdersStatusFromExcel = async (req, res) => {
           }
 
           const targetShippingMethodId = "69e60bb32e8678f757162c5c";
-          const currentShippingMethod = order.shippingMethod;
-          const currentShippingCharge = order.shippingCharge || 0;
+          const methodVal = String(order.shippingMethod || "");
+          let currentShippingCharge = order.shippingCharge || 0;
           const currentPackingCharge = order.packingCharge || 0;
-          const currentTotalPrice = order.totalPrice;
+          const currentTotalPrice = order.totalPrice || 0;
 
-          if (status_to_update === "Cancelled") {
-            if (currentShippingMethod === targetShippingMethodId) {
-              amount_credit = currentTotalPrice;
-            } else {
-              amount_credit = currentTotalPrice - currentPackingCharge;
+          // Resolve actual shipping method if it's Style4Sure
+          let isStyle4Sure = false;
+          if (
+            methodVal === targetShippingMethodId || 
+            methodVal.toLowerCase().includes("style4sure") || 
+            (order.marketPlaceOrderNumber && order.marketPlaceOrderNumber.toUpperCase().includes("S4S"))
+          ) {
+            isStyle4Sure = true;
+            // Fallback for shipping charge if it's 0 (common in bulk uploads)
+            if (currentShippingCharge === 0) {
+              try {
+                const method = await ShippingMethod.findOne({
+                  $or: [
+                    { _id: mongoose.isValidObjectId(methodVal) ? methodVal : new mongoose.Types.ObjectId() },
+                    { name: /Style4sure/i }
+                  ]
+                });
+                if (method) currentShippingCharge = method.charge;
+              } catch (e) {
+                console.error("Style4Sure charge lookup failed:", e);
+              }
             }
-          } else if (status_to_update === "Right RTO Return" || status_to_update === "Right Customer Return") {
-            if (currentShippingMethod === targetShippingMethodId) {
+          }
+
+          console.log(`Processing Order ${market_place_order_number}: isStyle4Sure=${isStyle4Sure}, Price=${currentTotalPrice}, Ship=${currentShippingCharge}`);
+
+          const statusLower = status_to_update.toLowerCase();
+
+          if (isStyle4Sure) {
+            // Style4Sure Shipping Logic
+            if (statusLower.includes("cancelled")) {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return")) {
+              // Refund = Product - Shipping (Double deduction: 1x forward + 1x return)
+              amount_credit = currentTotalPrice - (currentPackingCharge + 2 * currentShippingCharge);
+            } else if (statusLower.includes("right customer return")) {
               amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
             } else {
-              amount_credit = currentTotalPrice - currentPackingCharge;
+              amount_credit = 0;
             }
           } else {
-            amount_credit = 0;
+            // Standard Logic for other shipping methods
+            if (statusLower.includes("cancelled")) {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return") || statusLower.includes("right customer return")) {
+              amount_credit = currentTotalPrice - currentPackingCharge;
+            } else {
+              amount_credit = 0;
+            }
           }
 
-          if (amount_credit > 0) {
-            client.walletBalance += amount_credit;
-          }
-          amount_debit = 0;
+          console.log(`Calculated amount_credit for ${statusLower}: ${amount_credit}`);
 
+          client.walletBalance += amount_credit;
           await client.save();
 
           const walletBalance = client.walletBalance;
 
           const newTransaction = new Transaction({
-            amountDebit: amount_debit,
+            amountDebit: 0,
             amountCredit: amount_credit,
             client: clientId,
             order,
             t_type: "order_update",
             balance: walletBalance,
+            marketPlaceOrderNumber: market_place_order_number,
           });
 
           await newTransaction.save();
@@ -1459,44 +1565,79 @@ const updateOrdersStatusFromExcel = async (req, res) => {
 
                   await new_order.save();
 
-                  let walletBalance = 0;
                   let amount_credit = 0;
                   const targetShippingMethodId = "69e60bb32e8678f757162c5c";
-                  const currentShippingMethod = order.orders[j].shippingMethod;
-                  const currentShippingCharge = order.orders[j].shippingCharge || 0;
+                  const methodVal = String(order.orders[j].shippingMethod || "");
+                  let currentShippingCharge = order.orders[j].shippingCharge || 0;
                   const currentPackingCharge = order.orders[j].packingCharge || 0;
-                  const currentTotalPrice = order.orders[j].totalPrice;
+                  const currentTotalPrice = order.orders[j].totalPrice || 0;
 
-                  if (status_to_update === "Right RTO Return" || status_to_update === "Right Customer Return") {
-                    if (currentShippingMethod === targetShippingMethodId) {
+                  // Resolve actual shipping method if it's Style4Sure
+                  let isStyle4Sure = false;
+                  if (
+                    methodVal === targetShippingMethodId || 
+                    methodVal.toLowerCase().includes("style4sure") || 
+                    (market_place_order_number && market_place_order_number.toUpperCase().includes("S4S"))
+                  ) {
+                    isStyle4Sure = true;
+                    // Fallback for shipping charge if it's 0 (common in bulk uploads)
+                    if (currentShippingCharge === 0) {
+                      try {
+                        const method = await ShippingMethod.findOne({
+                          $or: [
+                            { _id: mongoose.isValidObjectId(methodVal) ? methodVal : new mongoose.Types.ObjectId() },
+                            { name: /Style4sure/i }
+                          ]
+                        });
+                        if (method) currentShippingCharge = method.charge;
+                      } catch (e) {
+                        console.error("Style4Sure charge lookup failed:", e);
+                      }
+                    }
+                  }
+
+                  console.log(`Processing Order Item ${market_place_order_number}: isStyle4Sure=${isStyle4Sure}, Price=${currentTotalPrice}, Ship=${currentShippingCharge}`);
+
+                  const statusLower = status_to_update.toLowerCase();
+
+                  if (isStyle4Sure) {
+                    // Style4Sure Shipping Logic
+                    if (statusLower.includes("cancelled")) {
+                      amount_credit = currentTotalPrice - currentPackingCharge;
+                    } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return")) {
+                      // Refund = Product - Shipping (Double deduction: 1x forward + 1x return)
+                      amount_credit = currentTotalPrice - (currentPackingCharge + 2 * currentShippingCharge);
+                    } else if (statusLower.includes("right customer return")) {
                       amount_credit = currentTotalPrice - (currentPackingCharge + currentShippingCharge);
                     } else {
-                      amount_credit = currentTotalPrice - currentPackingCharge;
-                    }
-                  } else if (status_to_update === "Cancelled") {
-                    if (currentShippingMethod === targetShippingMethodId) {
-                      amount_credit = currentTotalPrice;
-                    } else {
-                      amount_credit = currentTotalPrice - currentPackingCharge;
+                      amount_credit = 0;
                     }
                   } else {
-                    amount_credit = 0;
+                    // Standard Logic for other shipping methods
+                    if (statusLower.includes("cancelled")) {
+                      amount_credit = currentTotalPrice - currentPackingCharge;
+                    } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return") || statusLower.includes("right customer return")) {
+                      amount_credit = currentTotalPrice - currentPackingCharge;
+                    } else {
+                      amount_credit = 0;
+                    }
                   }
 
-                  if (amount_credit > 0) {
-                    client.walletBalance += amount_credit;
-                    await client.save();
-                  }
-                  amount_debit = 0;
-                  walletBalance = client.walletBalance;
+                  console.log(`Calculated amount_credit for ${statusLower}: ${amount_credit}`);
+
+                  client.walletBalance += amount_credit;
+                  await client.save();
+
+                  const walletBalance = client.walletBalance;
 
                   const newTransaction = new Transaction({
-                    amountDebit: amount_debit,
+                    amountDebit: 0,
                     amountCredit: amount_credit,
                     client: clientId,
                     order: order.orders[j],
                     t_type: "order_update",
                     balance: walletBalance,
+                    marketPlaceOrderNumber: market_place_order_number,
                   });
 
                   await newTransaction.save();
