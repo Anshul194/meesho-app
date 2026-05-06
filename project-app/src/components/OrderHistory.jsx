@@ -531,8 +531,6 @@ const OrderHistory = () => {
                     <th>Shipping Charge</th>
                     <th>Tracking ID</th>
                     <th>Shipping Partner</th>
-                    <th>Tracking Label Doc</th>
-                    <th>Shipping Label</th>
                     <th>Total</th>
                   </tr>
                 </thead>
@@ -708,45 +706,6 @@ const OrderHistory = () => {
                               <td>
                                 {item.shippingPartnerName || <span style={{ color: '#aaa', fontSize: '10px' }}>-</span>}
                               </td>
-                              <td>
-                                {item.trackingLabelPath ? (
-                                  <button
-                                    style={{
-                                      background: "#ff9800",
-                                      color: "#fff",
-                                      border: "none",
-                                      borderRadius: "10px",
-                                      padding: "4px 10px",
-                                      cursor: "pointer",
-                                      fontSize: "12px",
-                                    }}
-                                    onClick={() => window.open(`${API_ENDPOINT}/${item.trackingLabelPath.replace(/\\/g, '/')}`, '_blank')}
-                                  >
-                                    Preview Label
-                                  </button>
-                                ) : (
-                                  <span style={{ color: '#aaa', fontSize: '10px' }}>No Doc</span>
-                                )}
-                              </td>
-                              <td>
-                                {order.shippingLabelPath ? (
-                                  <button
-                                    style={{
-                                      background: "#4caf50",
-                                      color: "#fff",
-                                      border: "none",
-                                      borderRadius: "10px",
-                                      padding: "4px 10px",
-                                      cursor: "pointer",
-                                    }}
-                                    onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
-                                  >
-                                    Preview Shipping Label
-                                  </button>
-                                ) : (
-                                  <span style={{ color: '#aaa', fontSize: '12px' }}>No Shipping Label</span>
-                                )}
-                              </td>
                               <td>{item.totalPrice !== undefined ? item.totalPrice : (order.totalPrice !== undefined ? order.totalPrice : "-")}</td>
                             </tr>
                           ))}
@@ -875,30 +834,6 @@ const OrderHistory = () => {
                             </td>
                             <td>
                               {order.shippingPartnerName || <span style={{ color: '#aaa', fontSize: '10px' }}>-</span>}
-                            </td>
-                            <td>
-                              {order.trackingLabelPath ? (
-                                <button
-                                  style={{ background: "#ff9800", color: "#fff", border: "none", borderRadius: "10px", padding: "4px 10px", cursor: "pointer", fontSize: "12px" }}
-                                  onClick={() => window.open(`${API_ENDPOINT}/${order.trackingLabelPath.replace(/\\/g, '/')}`, '_blank')}
-                                >
-                                  Preview Label
-                                </button>
-                              ) : (
-                                <span style={{ color: '#aaa', fontSize: '10px' }}>No Doc</span>
-                              )}
-                            </td>
-                            <td>
-                              {order.shippingLabelPath ? (
-                                <button
-                                  style={{ background: "#4caf50", color: "#fff", border: "none", borderRadius: "10px", padding: "4px 10px", cursor: "pointer" }}
-                                  onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
-                                >
-                                  Preview Shipping Label
-                                </button>
-                              ) : (
-                                <span style={{ color: '#aaa', fontSize: '12px' }}>No Shipping Label</span>
-                              )}
                             </td>
                             <td>{order.totalPrice !== undefined ? order.totalPrice : "-"}</td>
                           </tr>
