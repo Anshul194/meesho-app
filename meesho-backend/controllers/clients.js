@@ -122,16 +122,30 @@ const updateClient = async (req, res) => {
     // Find the client by _id and update it
     const updatedClient = await Client.findByIdAndUpdate(
       clientData._id,
-      updateFields
+      updateFields,
+      { new: true } // Return the updated document
     );
 
     if (!updatedClient) {
       return res.status(404).json({
         error: "Client not found",
         message: "No client found with the provided _id.",
-        success: true,
+        success: false,
       });
     }
+
+    // IMPORTANT: Synchronize the User collection for login
+    const userUpdateFields = {};
+    if (updateFields.clientName) userUpdateFields.name = updateFields.clientName;
+    if (updateFields.password) userUpdateFields.password = updateFields.password;
+    if (updateFields.phone) userUpdateFields.phone = updateFields.phone;
+    // Note: Email updates are not explicitly handled here as clientData._id is used for lookup,
+    // but we check the User collection by the client ID reference.
+
+    await User.findOneAndUpdate(
+      { client: updatedClient._id },
+      userUpdateFields
+    );
 
     res.status(200).json({
       message: "Client updated successfully",
@@ -167,6 +181,9 @@ const removeClient = async (req, res) => {
         success: false,
       });
     }
+
+    // Also remove the associated User
+    await User.findOneAndDelete({ client: clientId });
 
     res.status(200).json({
       message: "Client deleted successfully",
