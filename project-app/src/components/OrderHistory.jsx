@@ -270,8 +270,19 @@ const OrderHistory = () => {
         throw new Error("Token not found in localStorage");
       }
 
+      const queryParams = [
+        `clientId=${clientId}`,
+        `orderNumber=${searchValue}`,
+        `page=${page}`,
+        `limit=${0}`,
+        `from=${startDate}`,
+        `to=${endDate}`,
+        `status=${status}`,
+      ];
+      if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${clientId}&orderNumber=${searchValue}&page=${page}&limit=${0}&from=${startDate}&to=${endDate}`,
+        `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
         {
           headers: {
             "x-access-token": token,
@@ -307,33 +318,47 @@ const OrderHistory = () => {
         for (let j = 0; j < order.orders.length; j++) {
           const item = order.orders[j];
           const cleanedOrder = {
-            "Market Place Order Number": item.marketPlaceOrderNumber,
-            Client: item.client.clientName,
-            "Date & Time": formatDateTime(item.createdAt),
-            "Product Name": item.product.productName,
-            "Product SKU": item.product.productSKU,
-            "Master SKU": item.masterSKU,
-            "Product Price": item.productPrice,
-            Quantity: item.quantity,
+            "Market Place Order Number": item.marketPlaceOrderNumber || "",
+            Client: item.client?.clientName || "",
+            "Date & Time":
+              item.status !== "Order Placed"
+                ? formatDateTime(item.updatedAt)
+                : formatDateTime(item.createdAt),
+            "Product Name": item.product?.productName || "",
+            "Product SKU": item.product?.productSKU || "",
+            "Master SKU": item.masterSKU || "",
+            "Product Price": item.productPrice || 0,
+            Quantity: item.quantity || 0,
+            Status: item.status || "No Status Found",
+            "Packing Charge": item.packingCharge || 0,
             "Shipping Method": item.shippingMethod || "",
             "Shipping Charge": item.shippingCharge !== undefined ? item.shippingCharge : "",
-            "Total Price": item.totalPrice,
+            "Total Price": item.totalPrice || 0,
+            "Shipping Partner Name": item.shippingPartnerName || "",
+            "Tracking ID": item.trackingId || "",
           };
           cleanedData.push(cleanedOrder);
         }
       } else {
         const cleanedOrder = {
-          "Market Place Order Number": order.marketPlaceOrderNumber,
-          Client: order.client.clientName,
-          "Date & Time": formatDateTime(order.createdAt),
-          "Product Name": order.product.productName,
-          "Product SKU": order.product.productSKU,
-          "Master SKU": order.masterSKU,
-          "Product Price": order.productPrice,
-          Quantity: order.quantity,
+          "Market Place Order Number": order.marketPlaceOrderNumber || "",
+          Client: order.client?.clientName || "",
+          "Date & Time":
+            order.status !== "Order Placed"
+              ? formatDateTime(order.updatedAt)
+              : formatDateTime(order.createdAt),
+          "Product Name": order.product?.productName || "",
+          "Product SKU": order.product?.productSKU || "",
+          "Master SKU": order.masterSKU || "",
+          "Product Price": order.productPrice || 0,
+          Quantity: order.quantity || 0,
+          Status: order.status || "No Status Found",
+          "Packing Charge": order.packingCharge || 0,
           "Shipping Method": order.shippingMethod || "",
           "Shipping Charge": order.shippingCharge !== undefined ? order.shippingCharge : "",
-          "Total Price": order.totalPrice,
+          "Total Price": order.totalPrice || 0,
+          "Shipping Partner Name": order.shippingPartnerName || "",
+          "Tracking ID": order.trackingId || "",
         };
         cleanedData.push(cleanedOrder);
       }
@@ -504,7 +529,7 @@ const OrderHistory = () => {
                     <th>Packing Charge</th>
                     <th>Shipping Method</th>
                     <th>Shipping Charge</th>
-                    <th>Tracking URL</th>
+                    <th>Tracking ID</th>
                     <th>Shipping Partner</th>
                     <th>Tracking Label Doc</th>
                     <th>Shipping Label</th>
@@ -674,10 +699,8 @@ const OrderHistory = () => {
                               <td>{item.shippingMethod || ""}</td>
                               <td>{item.shippingCharge !== undefined ? item.shippingCharge : ""}</td>
                               <td>
-                                {item.trackingUrl ? (
-                                  <a href={item.trackingUrl} target="_blank" rel="noreferrer" style={{ fontSize: '12px' }}>
-                                    {item.trackingId || 'View Tracking'}
-                                  </a>
+                                {item.trackingId ? (
+                                  <span style={{ fontSize: '12px' }}>{item.trackingId}</span>
                                 ) : (
                                   <span style={{ color: '#aaa', fontSize: '10px' }}>No Tracking</span>
                                 )}
@@ -841,6 +864,42 @@ const OrderHistory = () => {
                             </td>
                             <td>{order.productPrice}</td>
                             <td>{order.packingCharge}</td>
+                            <td>{order.shippingMethod || ""}</td>
+                            <td>{order.shippingCharge !== undefined ? order.shippingCharge : ""}</td>
+                            <td>
+                              {order.trackingId ? (
+                                <span style={{ fontSize: '12px' }}>{order.trackingId}</span>
+                              ) : (
+                                <span style={{ color: '#aaa', fontSize: '10px' }}>No Tracking</span>
+                              )}
+                            </td>
+                            <td>
+                              {order.shippingPartnerName || <span style={{ color: '#aaa', fontSize: '10px' }}>-</span>}
+                            </td>
+                            <td>
+                              {order.trackingLabelPath ? (
+                                <button
+                                  style={{ background: "#ff9800", color: "#fff", border: "none", borderRadius: "10px", padding: "4px 10px", cursor: "pointer", fontSize: "12px" }}
+                                  onClick={() => window.open(`${API_ENDPOINT}/${order.trackingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                >
+                                  Preview Label
+                                </button>
+                              ) : (
+                                <span style={{ color: '#aaa', fontSize: '10px' }}>No Doc</span>
+                              )}
+                            </td>
+                            <td>
+                              {order.shippingLabelPath ? (
+                                <button
+                                  style={{ background: "#4caf50", color: "#fff", border: "none", borderRadius: "10px", padding: "4px 10px", cursor: "pointer" }}
+                                  onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
+                                >
+                                  Preview Shipping Label
+                                </button>
+                              ) : (
+                                <span style={{ color: '#aaa', fontSize: '12px' }}>No Shipping Label</span>
+                              )}
+                            </td>
                             <td>{order.totalPrice !== undefined ? order.totalPrice : "-"}</td>
                           </tr>
                         )}

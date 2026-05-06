@@ -499,9 +499,20 @@ export default function Dorder() {
         throw new Error("Token not found in localStorage");
       }
 
+      const queryParams = [
+        `clientId=${selectedClient || ""}`,
+        `orderNumber=${searchValue}`,
+        `page=${page}`,
+        `limit=${0}`,
+        `from=${startDate}`,
+        `to=${endDate}`,
+        `status=${status}`,
+        `isLableDownloaded=true`,
+      ];
+      if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+
       const response = await fetch(
-        `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${selectedClient || ""
-        }&orderNumber=${searchValue}&page=${page}&limit=${0}&from=${startDate}&to=${endDate}&isLableDownloaded=true`,
+        `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
         {
           headers: {
             "x-access-token": token,
@@ -510,11 +521,11 @@ export default function Dorder() {
       );
       const data = await response.json();
       console.log("Excel Data:", data);
-      // if (data.success) {
-      //   setExcelData(data.data);
-      // } else {
-      //   console.error("Failed to fetch orders:", data.message);
-      // }
+      if (data.success) {
+        setExcelData(data.data);
+      } else {
+        console.error("Failed to fetch orders:", data.message);
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -528,8 +539,7 @@ export default function Dorder() {
     }
   }, [excelData]);
   const cleanExcelData = () => {
-    // console.log("Cleaned");
-    // console.log(excelData);
+    console.log("Excel Data from state before cleaning:", excelData);
     let cleanedData = [];
 
     for (let i = 0; i < excelData.length; i++) {
@@ -538,44 +548,53 @@ export default function Dorder() {
         for (let j = 0; j < order.orders.length; j++) {
           const item = order.orders[j];
           const cleanedOrder = {
-            "Market Place Order Number": item.marketPlaceOrderNumber,
-            Client: item.client.clientName,
+            "Market Place Order Number": item.marketPlaceOrderNumber || "",
+            Client: item.client?.clientName || "",
             "Date & Time":
               item.status !== "Order Placed"
                 ? formatDateTime(item.updatedAt)
                 : formatDateTime(item.createdAt),
-            "Product Name": item.product.productName,
-            "Product SKU": item.product.productSKU,
-            "Master SKU": item.masterSKU,
-            "Product Price": item.productPrice,
-            Quantity: item.quantity,
-            Status: item.status,
-            "Total Price": item.totalPrice,
+            "Product Name": item.product?.productName || "",
+            "Product SKU": item.product?.productSKU || "",
+            "Master SKU": item.masterSKU || "",
+            "Product Price": item.productPrice || 0,
+            Quantity: item.quantity || 0,
+            Status: item.status || "No Status Found",
+            "Packing Charge": item.packingCharge || 0,
+            "Shipping Method": item.shippingMethod || "",
+            "Shipping Charge": item.shippingCharge !== undefined ? item.shippingCharge : "",
+            "Total Price": item.totalPrice || 0,
+            "Shipping Partner Name": item.shippingPartnerName || "",
+            "Tracking ID": item.trackingId || "",
           };
           cleanedData.push(cleanedOrder);
         }
       } else {
         const cleanedOrder = {
-          "Market Place Order Number": order.marketPlaceOrderNumber,
-          Client: order.client.clientName,
+          "Market Place Order Number": order.marketPlaceOrderNumber || "",
+          Client: order.client?.clientName || "",
           "Date & Time":
             order.status !== "Order Placed"
               ? formatDateTime(order.updatedAt)
               : formatDateTime(order.createdAt),
-          "Product Name": order.product.productName,
-          "Product SKU": order.product.productSKU,
-          "Master SKU": order.masterSKU,
-          "Product Price": order.productPrice,
-          Quantity: order.quantity,
-          Status: order.status,
-          "Total Price": order.totalPrice,
+          "Product Name": order.product?.productName || "",
+          "Product SKU": order.product?.productSKU || "",
+          "Master SKU": order.masterSKU || "",
+          "Product Price": order.productPrice || 0,
+          Quantity: order.quantity || 0,
+          Status: order.status || "No Status Found",
+          "Packing Charge": order.packingCharge || 0,
+          "Shipping Method": order.shippingMethod || "",
+          "Shipping Charge": order.shippingCharge !== undefined ? order.shippingCharge : "",
+          "Total Price": order.totalPrice || 0,
+          "Shipping Partner Name": order.shippingPartnerName || "",
+          "Tracking ID": order.trackingId || "",
         };
         cleanedData.push(cleanedOrder);
       }
     }
 
-    console.log("Cleaned Data:");
-    console.log(cleanedData);
+    console.log("Cleaned Data array being sent to Excel:", cleanedData);
     exportToExcel(
       cleanedData,
       `Downloaded-Orders-${formatDateTime(new Date())}`
@@ -901,7 +920,7 @@ export default function Dorder() {
                     <th>Packing Charge</th>
                     <th>Shipping Method</th>
                     <th>Shipping Charge</th>
-                    <th>Tracking URL</th>
+                    <th>Tracking ID</th>
                     <th>Shipping Partner</th>
                     <th>Tracking Label Doc</th>
                     <th>Shipping Label</th>
@@ -1070,10 +1089,8 @@ export default function Dorder() {
                               <td>{item.shippingMethod || ""}</td>
                               <td>{item.shippingCharge !== undefined ? item.shippingCharge : ""}</td>
                               <td>
-                                {item.trackingUrl ? (
-                                  <a href={item.trackingUrl} target="_blank" rel="noreferrer" style={{ fontSize: '12px' }}>
-                                    {item.trackingId || 'View Tracking'}
-                                  </a>
+                                {item.trackingId ? (
+                                  <span style={{ fontSize: '12px' }}>{item.trackingId}</span>
                                 ) : (
                                   <span style={{ color: '#aaa', fontSize: '10px' }}>No Tracking</span>
                                 )}
@@ -1277,10 +1294,8 @@ export default function Dorder() {
                             <td>{order.shippingMethod || ""}</td>
                             <td>{order.shippingCharge !== undefined ? order.shippingCharge : ""}</td>
                             <td>
-                              {order.trackingUrl ? (
-                                <a href={order.trackingUrl} target="_blank" rel="noreferrer" style={{ fontSize: '12px' }}>
-                                  {order.trackingId || 'View Tracking'}
-                                </a>
+                              {order.trackingId ? (
+                                <span style={{ fontSize: '12px' }}>{order.trackingId}</span>
                               ) : (
                                 <span style={{ color: '#aaa', fontSize: '10px' }}>No Tracking</span>
                               )}
