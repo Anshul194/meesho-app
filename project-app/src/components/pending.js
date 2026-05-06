@@ -55,6 +55,13 @@ export default function Pending() {
   const [marketPlace, setMarketPlace] = useState("");
   const [shippingMethod, setShippingMethod] = useState("");
   const [shippingMethods, setShippingMethods] = useState([]);
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [warningMsg, setWarningMsg] = useState("");
+
+  const showWarning = (msg) => {
+    setWarningMsg(msg);
+    setWarningOpen(true);
+  };
   const marketPlaceOptions = [
     { value: "Meesho", label: "Meesho" },
     { value: "Amazon", label: "Amazon" },
@@ -392,27 +399,69 @@ export default function Pending() {
 
   const handleDownloadLabels = async () => {
     try {
-      const selectedOrderIds = orders
-        .filter((order) => order.selected)
-        .map((order) => order._id);
-
-      if (selectedOrderIds.length === 0) {
-        alert("Please select at least one item");
+      // 1. Mandatory Filter Validation
+      if (!marketPlace) {
+        showWarning("❌ Please select a Marketplace filter first before downloading labels.");
         return;
       }
+
+      if (marketPlace.toLowerCase() !== "meesho" && !shippingMethod) {
+        showWarning(`❌ Please select a Shipping Method filter for ${marketPlace} before downloading labels.`);
+        return;
+      }
+
+      const selectedOrders = orders.filter((order) => order.selected);
+      const selectedOrderIds = selectedOrders.map((order) => order._id);
+
+      if (selectedOrderIds.length === 0) {
+        showWarning("Please select at least one item to download.");
+        return;
+      }
+
+      // ─── Validation: shipping method for non-Meesho ─────────────────────
+      const missingShipping = [];
+
+      for (const order of selectedOrders) {
+        const marketplace = order.marketPlace || "";
+
+        // Non-Meesho orders require a shipping method
+        if (marketplace.toLowerCase() !== "meesho") {
+          let hasShipping = false;
+          if (order.revisions === 1 && Array.isArray(order.orders) && order.orders.length > 0) {
+            hasShipping = order.orders.every((item) => !!item.shippingMethod);
+          } else {
+            hasShipping = !!order.shippingMethod;
+          }
+
+          if (!hasShipping) {
+            const num =
+              order.marketPlaceOrderNumber ||
+              order.orders?.[0]?.marketPlaceOrderNumber ||
+              order._id;
+            missingShipping.push(`${num} (${marketplace || "N/A"})`);
+          }
+        }
+      }
+
+      if (missingShipping.length > 0) {
+        showWarning(
+          `❌ The following orders require a Shipping Method before downloading:\n\n${missingShipping.join(", ")}\n\nNote: Only Meesho orders can be downloaded without a shipping method.`
+        );
+        return;
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       const token = localStorage.getItem("token");
       setRequestedDateTime(new Date());
       setPercentCompleted(0);
-      handleClickOpen2(); // ✅ Open modal BEFORE request so progress bar is visible
+      handleClickOpen2(); // Open modal so progress bar is visible
 
       let idsToApi;
       if (selectAll) {
-        const selectedOrderIds = orders
+        const deselectedIds = orders
           .filter((order) => !order.selected)
           .map((order) => order._id);
-
-        idsToApi = selectedOrderIds;
+        idsToApi = deselectedIds;
       } else {
         idsToApi = selectedOrderIds;
       }
@@ -501,6 +550,20 @@ export default function Pending() {
       fetchOrders();
       setSelectAll(false);
     }
+  };
+
+  const handleRowDownload = (e, path, order) => {
+    if (!marketPlace) {
+      e.preventDefault();
+      showWarning("❌ Please select a Marketplace filter first.");
+      return;
+    }
+    if (marketPlace.toLowerCase() !== "meesho" && !shippingMethod) {
+      e.preventDefault();
+      showWarning(`❌ Please select a Shipping Method filter for ${marketPlace}.`);
+      return;
+    }
+    // If okay, the default behavior of the <a> tag will handle the download
   };
 
   return (
@@ -749,6 +812,7 @@ export default function Pending() {
                                       }}
                                       href={`${API_ENDPOINT}/${order.labelPath}`}
                                       download={true}
+                                      onClick={(e) => handleRowDownload(e, order.labelPath, order)}
                                     >
                                       <i className="fa-solid fa-download pr-2"></i>{" "}
                                       Label
@@ -841,6 +905,7 @@ export default function Pending() {
                                   }}
                                   href={`${API_ENDPOINT}/${order.labelPath}`}
                                   download={true}
+                                  onClick={(e) => handleRowDownload(e, order.labelPath, order)}
                                 >
                                   <i className="fa-solid fa-download pr-2"></i>{" "}
                                   Label
@@ -1053,6 +1118,48 @@ export default function Pending() {
         >
           <CircularProgress color="inherit" />
         </Backdrop>
+
+        <Modal
+          open={warningOpen}
+          onClose={() => setWarningOpen(false)}
+          aria-labelledby="warning-modal-title"
+          aria-describedby="warning-modal-description"
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "400px",
+              bgcolor: "background.paper",
+              border: "none",
+              borderRadius: "12px",
+              boxShadow: 24,
+              p: 4,
+              textAlign: "center",
+            }}
+          >
+            <Typography id="warning-modal-title" variant="h6" component="h2" sx={{ color: "#d32f2f", fontWeight: "bold", mb: 2 }}>
+              Attention Required
+            </Typography>
+            <Typography id="warning-modal-description" sx={{ whiteSpace: "pre-line", mb: 3 }}>
+              {warningMsg}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => setWarningOpen(false)}
+              sx={{
+                backgroundColor: "#1341E8",
+                textTransform: "none",
+                borderRadius: "20px",
+                px: 4,
+              }}
+            >
+              Understand
+            </Button>
+          </Box>
+        </Modal>
       </div>
     </div>
   );
