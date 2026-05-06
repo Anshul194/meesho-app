@@ -1842,18 +1842,15 @@ const sendToDownloadedLables = async (req, res) => {
     const { ids, selectAll } = req.body;
 
     const query = selectAll ? { _id: { $nin: ids } } : { _id: { $in: ids } };
+    query.isLableDownloaded = false;
 
-    // Find orders based on the query
-    const orders = await Order.find(query).sort({ createdAt: -1 });
+    // Use updateMany for much better performance
+    const result = await Order.updateMany(query, {
+      $set: { isLableDownloaded: true },
+    });
 
-    for (const order of orders) {
-      if (order.isLableDownloaded === false) {
-        order.isLableDownloaded = true;
-        await order.save();
-      }
-    }
     res.status(200).json({
-      message: "Selected orders sent to downloaded orders successfully.",
+      message: `${result.modifiedCount} orders sent to downloaded orders successfully.`,
       success: true,
     });
   } catch (error) {

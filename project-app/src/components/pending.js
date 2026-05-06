@@ -77,6 +77,7 @@ export default function Pending() {
   const [imageName, setImageName] = useState(null);
   const [percentCompleted, setPercentCompleted] = useState(0);
   const [requestedDateTime, setRequestedDateTime] = React.useState(null);
+  const [modalTitle, setModalTitle] = useState("Generating Labels...");
   const [snackOpen, setSnackOpen] = React.useState(false);
   const [snack, setSnack] = React.useState("");
   const [snackType, setSnackType] = React.useState("success");
@@ -454,6 +455,7 @@ export default function Pending() {
       const token = localStorage.getItem("token");
       setRequestedDateTime(new Date());
       setPercentCompleted(0);
+      setModalTitle("Generating Labels...");
       handleClickOpen2(); // Open modal so progress bar is visible
 
       let idsToApi;
@@ -522,6 +524,9 @@ export default function Pending() {
 
       const token = localStorage.getItem("token");
       setRequestedDateTime(new Date());
+      setModalTitle("Moving Orders to History...");
+      setPercentCompleted(30);
+      handleClickOpen2();
 
       let idsToApi;
       if (selectAll) {
@@ -544,7 +549,14 @@ export default function Pending() {
           },
         }
       );
+      setPercentCompleted(100);
+      setSnack("Orders moved to history successfully!");
+      setSnackType("success");
+      handleSnackOpen();
     } catch (error) {
+      setSnack("Failed to move orders. Please try again.");
+      setSnackType("error");
+      handleSnackOpen();
     } finally {
       handleClose2();
       fetchOrders();
@@ -1091,7 +1103,7 @@ export default function Pending() {
             }}
           >
             <Typography variant="h6" gutterBottom align="center">
-              Generating Labels...
+              {modalTitle}
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <Box sx={{ width: "100%", mr: 1 }}>
