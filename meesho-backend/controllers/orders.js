@@ -289,6 +289,38 @@ const getAllOrders = async (req, res) => {
       });
     }
 
+    // Add shippingMethod filter if present
+    if (req.query.shippingMethod) {
+      filter.$and = filter.$and || [];
+
+      // Case 1: shippingMethod stored as plain name string (e.g. "My Own Shipping")
+      const smNameRegex = { $regex: new RegExp(`^${req.query.shippingMethod}$`, "i") };
+
+      const smOrConditions = [
+        { shippingMethod: smNameRegex },
+        { "orders.shippingMethod": smNameRegex },
+      ];
+
+      // Case 2: shippingMethod stored as ObjectId hex string (e.g. "69abc123...")
+      // because orderItemSchema.shippingMethod is type:String, Mongoose stores ObjectId as its toString()
+      try {
+        const matchedMethods = await ShippingMethod.find({
+          name: { $regex: new RegExp(`^${req.query.shippingMethod}$`, "i") }
+        }).lean();
+        if (matchedMethods.length > 0) {
+          // Compare as string (since field is type:String, ObjectId is stored as hex string)
+          const matchedIdStrings = matchedMethods.map((m) => m._id.toString());
+          smOrConditions.push({ shippingMethod: { $in: matchedIdStrings } });
+          smOrConditions.push({ "orders.shippingMethod": { $in: matchedIdStrings } });
+        }
+      } catch (e) {
+        console.error("ShippingMethod ID lookup failed:", e);
+      }
+
+      console.log("shippingMethod filter conditions:", JSON.stringify(smOrConditions));
+      filter.$and.push({ $or: smOrConditions });
+    }
+
     if (from && to) {
       const fromDate = new Date(from);
       const toDate = new Date(to);

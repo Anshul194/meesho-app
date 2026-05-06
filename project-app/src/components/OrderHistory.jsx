@@ -21,6 +21,8 @@ const OrderHistory = () => {
   const userType = localStorage.getItem("user");
   const [marketPlace, setMarketPlace] = useState("");
   const [status, setStatus] = useState("");
+  const [shippingMethod, setShippingMethod] = useState("");
+  const [shippingMethods, setShippingMethods] = useState([]);
   const statusOptions = [
     { value: "", label: "All Status" },
     { value: "Order Placed", label: "Order Placed" },
@@ -104,6 +106,8 @@ const OrderHistory = () => {
 
       if (marketPlace)
         queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+      if (shippingMethod)
+        queryParams.push(`shippingMethod=${encodeURIComponent(shippingMethod)}`);
 
       const response = await fetch(
         `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
@@ -132,7 +136,26 @@ const OrderHistory = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page, rowsPerPage, marketPlace, status]);
+  }, [page, rowsPerPage, marketPlace, status, shippingMethod]);
+
+  useEffect(() => {
+    fetchShippingMethods();
+  }, []);
+
+  const fetchShippingMethods = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_ENDPOINT}/api/v1/shipping-methods`, {
+        headers: { "x-access-token": token },
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.data)) {
+        setShippingMethods(data.data.map((m) => ({ value: m.name, label: m.name })));
+      }
+    } catch (err) {
+      console.error("Failed to fetch shipping methods:", err);
+    }
+  };
 
   const handleFileChange = (event, orderId) => {
     const file = event.target.files[0];
@@ -280,6 +303,7 @@ const OrderHistory = () => {
         `status=${status}`,
       ];
       if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+      if (shippingMethod) queryParams.push(`shippingMethod=${encodeURIComponent(shippingMethod)}`);
 
       const response = await fetch(
         `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
@@ -402,6 +426,22 @@ const OrderHistory = () => {
                     setPage(1);
                   }}
                   placeholder="Select Status"
+                />
+              </div>
+              <div className="col-sm-3" style={{ marginTop: "8px", marginBottom: "8px" }}>
+                <Select
+                  options={shippingMethods}
+                  isClearable
+                  value={
+                    shippingMethod
+                      ? { value: shippingMethod, label: shippingMethod }
+                      : null
+                  }
+                  onChange={(selected) => {
+                    setShippingMethod(selected ? selected.value : "");
+                    setPage(1);
+                  }}
+                  placeholder="Select Shipping Method"
                 />
               </div>
             </div>
