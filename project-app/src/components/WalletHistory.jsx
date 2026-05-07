@@ -144,7 +144,7 @@ const WalletHistory = () => {
       const cleanedTxns = {
         "Date & Time": formatDateTime(txn.createdAt),
         "Transaction No.": txn?.transactionNo,
-        "Market Place Order Number": txn.marketPlaceOrderNumber,
+        "Market Place Order Number": txn.marketPlaceOrderNumber || txn.order?.marketPlaceOrderNumber || "-",
         "Status/Reason": txn.remarks || txn.order?.status || txn.status,
         "Amount Debit": txn.amountDebit,
         "Amount Credit": txn.amountCredit,
@@ -335,7 +335,9 @@ const WalletHistory = () => {
                       </td>
 
                       <td>
-                        {transaction.order?.marketPlaceOrderNumber
+                        {transaction.marketPlaceOrderNumber
+                          ? transaction.marketPlaceOrderNumber
+                          : transaction.order?.marketPlaceOrderNumber
                           ? transaction.order?.marketPlaceOrderNumber
                           : "-"}
                       </td>
