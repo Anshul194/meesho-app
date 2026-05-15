@@ -11,6 +11,7 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
+import Modal from "@mui/material/Modal";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { API_ENDPOINT } from "../util";
 
@@ -37,6 +38,18 @@ function Copyright(props) {
 const defaultTheme = createTheme();
 
 export default function PageLogin() {
+  const [errorModalOpen, setErrorModalOpen] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
+
+  const showErrorModal = (message) => {
+    setErrorMessage(message || "Failed to login");
+    setErrorModalOpen(true);
+  };
+
+  const handleErrorModalClose = () => {
+    setErrorModalOpen(false);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -55,12 +68,9 @@ export default function PageLogin() {
             body: JSON.stringify(formData)
         });
 
-        if (!response.ok) {
-            throw new Error("Failed to login");
-        }
-
         const responseData = await response.json();
-        if (responseData.success) {
+
+        if (response.ok && responseData.success) {
             // Save the token to local storage
             localStorage.setItem('token', responseData.data.token);
             localStorage.setItem('user', responseData.data.userType); 
@@ -72,11 +82,11 @@ export default function PageLogin() {
         } else {
             // Handle login failure
             console.error("Login failed:", responseData.message);
-            // You can display an error message to the user or take other actions as needed
+          showErrorModal(responseData.message || "Wrong details please check at once");
         }
     } catch (error) {
         console.error("Error logging in:", error.message);
-        // Handle the error (e.g., display an error message to the user)
+        showErrorModal("Unable to login right now. Please try again.");
     }
 };
 
@@ -155,6 +165,36 @@ export default function PageLogin() {
                 Sign In
               </Button>
             </Box>
+            <Modal
+              open={errorModalOpen}
+              onClose={handleErrorModalClose}
+              aria-labelledby="login-error-title"
+              aria-describedby="login-error-description"
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: 360,
+                  bgcolor: "background.paper",
+                  borderRadius: 2,
+                  boxShadow: 24,
+                  p: 3,
+                }}
+              >
+                <Typography id="login-error-title" variant="h6" sx={{ mb: 1 }}>
+                  Login Failed
+                </Typography>
+                <Typography id="login-error-description" sx={{ mb: 2 }}>
+                  {errorMessage}
+                </Typography>
+                <Button variant="contained" onClick={handleErrorModalClose}>
+                  OK
+                </Button>
+              </Box>
+            </Modal>
           </Box>
         </Grid>
       </Grid>
