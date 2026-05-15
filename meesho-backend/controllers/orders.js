@@ -19,6 +19,20 @@ const path = require("path");
 // const { ObjectId } = require("mongodb");
 const { mongoose } = require("mongoose");
 
+const resolveStoredFilePath = (storedPath) => {
+  if (!storedPath) {
+    return null;
+  }
+
+  const normalizedPath = String(storedPath).replace(/\\/g, path.sep);
+
+  if (path.isAbsolute(normalizedPath)) {
+    return normalizedPath;
+  }
+
+  return path.resolve(process.cwd(), normalizedPath);
+};
+
 // const createOrder = async (req, res) => {
 //   try {
 //     const file = req.file;
@@ -1219,7 +1233,7 @@ const downloadLabels = async (req, res) => {
 
     if (orders.length > 0) {
       for (const order of orders) {
-        const labelPath = order.labelPath;
+        const labelPath = resolveStoredFilePath(order.labelPath);
         if (fs.existsSync(labelPath)) {
           mergedPdfPath.push(labelPath);
         } else {
