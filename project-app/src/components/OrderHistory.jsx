@@ -63,7 +63,6 @@ const OrderHistory = () => {
     shippingPartnerName: "",
     trackingLabel: null
   });
-  const [excelData, setExcelData] = useState([]);
   const [open3, setOpen3] = React.useState(false);
   const handleClick = () => {
     setOpen(true);
@@ -283,61 +282,11 @@ const OrderHistory = () => {
     setPage(1); // Reset to first page on filter change
   };
 
-  const handleExport = async () => {
-    try {
-      setOpen3(true);
-      const token = localStorage.getItem("token");
-      const clientId = localStorage.getItem("clientId");
-
-      if (!token) {
-        throw new Error("Token not found in localStorage");
-      }
-
-      const queryParams = [
-        `clientId=${clientId}`,
-        `orderNumber=${searchValue}`,
-        `page=${page}`,
-        `limit=${0}`,
-        `from=${startDate}`,
-        `to=${endDate}`,
-        `status=${status}`,
-      ];
-      if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
-      if (shippingMethod) queryParams.push(`shippingMethod=${encodeURIComponent(shippingMethod)}`);
-
-      const response = await fetch(
-        `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
-        {
-          headers: {
-            "x-access-token": token,
-          },
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setExcelData(data.data);
-      } else {
-        console.error("Failed to fetch orders:", data.message);
-      }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setOpen3(false);
-    }
-  };
-
-  useEffect(() => {
-    if (excelData.length > 0) {
-      cleanExcelData(excelData);
-    }
-  }, [excelData]);
-  const cleanExcelData = () => {
-    // console.log("Cleaned");
-    // console.log(excelData);
+  const buildCleanedData = (sourceData) => {
     let cleanedData = [];
 
-    for (let i = 0; i < excelData.length; i++) {
-      const order = excelData[i];
+    for (let i = 0; i < sourceData.length; i++) {
+      const order = sourceData[i];
       if (order.revisions === 1) {
         for (let j = 0; j < order.orders.length; j++) {
           const item = order.orders[j];
@@ -388,9 +337,57 @@ const OrderHistory = () => {
       }
     }
 
-    console.log("Cleaned Data:");
-    console.log(cleanedData);
-    exportToExcel(cleanedData, `Orders-${formatDateTime(new Date())}`);
+    return cleanedData;
+  };
+
+  const handleExport = async () => {
+    try {
+      setOpen3(true);
+      const token = localStorage.getItem("token");
+      const clientId = localStorage.getItem("clientId");
+
+      if (!token) {
+        throw new Error("Token not found in localStorage");
+      }
+
+      const selectedOrders = orders.filter((order) => order.selected);
+      if (selectedOrders.length > 0) {
+        const cleanedData = buildCleanedData(selectedOrders);
+        exportToExcel(cleanedData, `Orders-${formatDateTime(new Date())}`);
+        return;
+      }
+
+      const queryParams = [
+        `clientId=${clientId}`,
+        `orderNumber=${searchValue}`,
+        `from=${startDate}`,
+        `to=${endDate}`,
+        `status=${status}`,
+        `exportAll=true`,
+      ];
+      if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
+      if (shippingMethod) queryParams.push(`shippingMethod=${encodeURIComponent(shippingMethod)}`);
+
+      const response = await fetch(
+        `${API_ENDPOINT}/api/v1/orders/selected/all?${queryParams.join("&")}`,
+        {
+          headers: {
+            "x-access-token": token,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        const cleanedData = buildCleanedData(data.data || []);
+        exportToExcel(cleanedData, `Orders-${formatDateTime(new Date())}`);
+      } else {
+        console.error("Failed to fetch orders:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setOpen3(false);
+    }
   };
 
   return (

@@ -41,7 +41,6 @@ const style = {
 
 export default function Pending() {
   const [orders, setOrders] = useState([]);
-  const [excelData, setExcelData] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -307,6 +306,53 @@ export default function Pending() {
     setPage(1); // Reset to first page on filter change
   };
 
+  const buildCleanedData = (sourceData, exportSelectedOnly = false) => {
+    const cleanedData = [];
+
+    for (let i = 0; i < sourceData.length; i++) {
+      const order = sourceData[i];
+
+      if (order.revisions === 1 && Array.isArray(order.orders)) {
+        const items = exportSelectedOnly
+          ? (order.selected ? order.orders : order.orders.filter((item) => item.selected))
+          : order.orders;
+
+        for (let j = 0; j < items.length; j++) {
+          const item = items[j];
+          cleanedData.push({
+            "Market Place Order Number": item.marketPlaceOrderNumber || "",
+            Client: item.client?.clientName || "",
+            "Date & Time": formatDateTime(item.createdAt),
+            "Product Name": item.product?.productName || "",
+            "Product SKU": item.product?.productSKU || "",
+            "Master SKU": item.masterSKU || "",
+            "Product Price": item.productPrice || 0,
+            Quantity: item.quantity || 0,
+            "Total Price": item.totalPrice || 0,
+          });
+        }
+      } else {
+        if (exportSelectedOnly && !order.selected) {
+          continue;
+        }
+
+        cleanedData.push({
+          "Market Place Order Number": order.marketPlaceOrderNumber || "",
+          Client: order.client?.clientName || "",
+          "Date & Time": formatDateTime(order.createdAt),
+          "Product Name": order.product?.productName || "",
+          "Product SKU": order.product?.productSKU || "",
+          "Master SKU": order.masterSKU || "",
+          "Product Price": order.productPrice || 0,
+          Quantity: order.quantity || 0,
+          "Total Price": order.totalPrice || 0,
+        });
+      }
+    }
+
+    return cleanedData;
+  };
+
   const handleExport = async () => {
     try {
       setLoaderOpen(true);
@@ -316,15 +362,30 @@ export default function Pending() {
         throw new Error("Token not found in localStorage");
       }
 
+      const hasSelectedOrders = orders.some((order) => {
+        if (order.revisions === 1 && Array.isArray(order.orders)) {
+          return order.selected || order.orders.some((item) => item.selected);
+        }
+        return order.selected;
+      });
+
+      if (hasSelectedOrders) {
+        const cleanedSelectedData = buildCleanedData(orders, true);
+        exportToExcel(
+          cleanedSelectedData,
+          `Pending-Orders-${formatDateTime(new Date())}`
+        );
+        return;
+      }
+
       const queryParams = [
         `clientId=${selectedClient || ""}`,
         `orderNumber=${searchValue}`,
-        `page=${page}`,
-        `limit=${0}`,
         `from=${startDate}`,
         `to=${endDate}`,
         `isLableDownloaded=false`,
         `status=pending`,
+        `exportAll=true`,
       ];
       if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
       if (shippingMethod) queryParams.push(`shippingMethod=${encodeURIComponent(shippingMethod)}`);
@@ -338,7 +399,8 @@ export default function Pending() {
       );
       const data = await response.json();
       if (data.success) {
-        setExcelData(data.data);
+        const cleanedData = buildCleanedData(data.data);
+        exportToExcel(cleanedData, `Pending-Orders-${formatDateTime(new Date())}`);
       } else {
         console.error("Failed to fetch orders:", data.message);
       }
@@ -347,55 +409,6 @@ export default function Pending() {
     } finally {
       setLoaderOpen(false);
     }
-  };
-
-  useEffect(() => {
-    if (excelData.length > 0) {
-      cleanExcelData(excelData);
-    }
-  }, [excelData]);
-  const cleanExcelData = () => {
-    // console.log("Cleaned");
-    // console.log(excelData);
-    let cleanedData = [];
-
-    for (let i = 0; i < excelData.length; i++) {
-      const order = excelData[i];
-      if (order.revisions === 1) {
-        for (let j = 0; j < order.orders.length; j++) {
-          const item = order.orders[j];
-          const cleanedOrder = {
-            "Market Place Order Number": item.marketPlaceOrderNumber,
-            Client: item.client.clientName,
-            "Date & Time": formatDateTime(item.createdAt),
-            "Product Name": item.product.productName,
-            "Product SKU": item.product.productSKU,
-            "Master SKU": item.masterSKU,
-            "Product Price": item.productPrice,
-            Quantity: item.quantity,
-            "Total Price": item.totalPrice,
-          };
-          cleanedData.push(cleanedOrder);
-        }
-      } else {
-        const cleanedOrder = {
-          "Market Place Order Number": order.marketPlaceOrderNumber,
-          Client: order.client.clientName,
-          "Date & Time": formatDateTime(order.createdAt),
-          "Product Name": order.product.productName,
-          "Product SKU": order.product.productSKU,
-          "Master SKU": order.masterSKU,
-          "Product Price": order.productPrice,
-          Quantity: order.quantity,
-          "Total Price": order.totalPrice,
-        };
-        cleanedData.push(cleanedOrder);
-      }
-    }
-
-    console.log("Cleaned Data:");
-    console.log(cleanedData);
-    exportToExcel(cleanedData, `Pending-Orders-${formatDateTime(new Date())}`);
   };
 
   const handleDownloadLabels = async () => {
