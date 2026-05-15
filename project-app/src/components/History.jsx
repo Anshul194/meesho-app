@@ -218,6 +218,9 @@ export default function Dorder() {
     }
   };
 
+  const isOwnShippingMethod = (method) =>
+    String(method || "").trim().toLowerCase() === "my own shipping";
+
   // const handleFilter = (status) => {
   //   const selectedOrders = orders.filter((order) => order.selected);
 
@@ -1013,30 +1016,32 @@ export default function Dorder() {
                                         <i className="fa-solid fa-download pr-2"></i>{" "}
                                         Label
                                       </a>
-                                      <button
-                                        style={{
-                                          textDecoration: "none",
-                                          color: "#fff",
-                                          backgroundColor: "#ff9800",
-                                          borderRadius: "20px",
-                                          padding: "4px 10px",
-                                          marginRight: "8px",
-                                          border: "none"
-                                        }}
-                                        onClick={() => {
-                                          setCurrentOrder({ orderId: order._id, itemId: item._id, revisions: 1 });
-                                          setTrackingData({
-                                            marketId: item.marketId || "",
-                                            trackingId: item.trackingId || "",
-                                            trackingUrl: item.trackingUrl || "",
-                                            shippingPartnerName: item.shippingPartnerName || "",
-                                            trackingLabelPath: item.trackingLabelPath || ""
-                                          });
-                                          setTrackingModalOpen(true);
-                                        }}
-                                      >
-                                        <i className="fa-solid fa-truck pr-2"></i>Add Tracking URL
-                                      </button>
+                                      {!isOwnShippingMethod(item.shippingMethod) && (
+                                        <button
+                                          style={{
+                                            textDecoration: "none",
+                                            color: "#fff",
+                                            backgroundColor: "#ff9800",
+                                            borderRadius: "20px",
+                                            padding: "4px 10px",
+                                            marginRight: "8px",
+                                            border: "none"
+                                          }}
+                                          onClick={() => {
+                                            setCurrentOrder({ orderId: order._id, itemId: item._id, revisions: 1 });
+                                            setTrackingData({
+                                              marketId: item.marketId || "",
+                                              trackingId: item.trackingId || "",
+                                              trackingUrl: item.trackingUrl || "",
+                                              shippingPartnerName: item.shippingPartnerName || "",
+                                              trackingLabelPath: item.trackingLabelPath || ""
+                                            });
+                                            setTrackingModalOpen(true);
+                                          }}
+                                        >
+                                          <i className="fa-solid fa-truck pr-2"></i>Add Tracking URL
+                                        </button>
+                                      )}
                                       {/* Shipping label preview removed */}
                                     </>
                                   ) : (
@@ -1169,31 +1174,33 @@ export default function Dorder() {
                                     <i className="fa-solid fa-download pr-2"></i>{" "}
                                     Label
                                   </a>
-                                  <button
-                                    style={{
-                                      textDecoration: "none",
-                                      color: "#fff",
-                                      backgroundColor: "#ff9800",
-                                      borderRadius: "20px",
-                                      padding: "4px 10px",
-                                      marginRight: "8px",
-                                      border: "none",
-                                      marginTop: "4px"
-                                    }}
-                                    onClick={() => {
-                                      setCurrentOrder({ orderId: order._id, revisions: 0 });
-                                      setTrackingData({
-                                        marketId: order.marketId || "",
-                                        trackingId: order.trackingId || "",
-                                        trackingUrl: order.trackingUrl || "",
-                                        shippingPartnerName: order.shippingPartnerName || "",
-                                        trackingLabelPath: order.trackingLabelPath || ""
-                                      });
-                                      setTrackingModalOpen(true);
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-truck pr-2"></i> Update Tracking
-                                  </button>
+                                  {!isOwnShippingMethod(order.shippingMethod) && (
+                                    <button
+                                      style={{
+                                        textDecoration: "none",
+                                        color: "#fff",
+                                        backgroundColor: "#ff9800",
+                                        borderRadius: "20px",
+                                        padding: "4px 10px",
+                                        marginRight: "8px",
+                                        border: "none",
+                                        marginTop: "4px"
+                                      }}
+                                      onClick={() => {
+                                        setCurrentOrder({ orderId: order._id, revisions: 0 });
+                                        setTrackingData({
+                                          marketId: order.marketId || "",
+                                          trackingId: order.trackingId || "",
+                                          trackingUrl: order.trackingUrl || "",
+                                          shippingPartnerName: order.shippingPartnerName || "",
+                                          trackingLabelPath: order.trackingLabelPath || ""
+                                        });
+                                        setTrackingModalOpen(true);
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-truck pr-2"></i> Update Tracking
+                                    </button>
+                                  )}
                                   {/* Shipping label preview removed */}
                                 </>
                               ) : (
