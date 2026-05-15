@@ -1037,21 +1037,7 @@ export default function Dorder() {
                                       >
                                         <i className="fa-solid fa-truck pr-2"></i>Add Tracking URL
                                       </button>
-                                      {order.shippingLabelPath && (
-                                        <button
-                                          style={{
-                                            background: "#4caf50",
-                                            color: "#fff",
-                                            border: "none",
-                                            borderRadius: "10px",
-                                            padding: "4px 10px",
-                                            cursor: "pointer",
-                                          }}
-                                          onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
-                                        >
-                                          Preview Shipping Label
-                                        </button>
-                                      )}
+                                      {/* Shipping label preview removed */}
                                     </>
                                   ) : (
                                     <a
@@ -1208,21 +1194,7 @@ export default function Dorder() {
                                   >
                                     <i className="fa-solid fa-truck pr-2"></i> Update Tracking
                                   </button>
-                                  {order.shippingLabelPath && (
-                                    <button
-                                      style={{
-                                        background: "#4caf50",
-                                        color: "#fff",
-                                        border: "none",
-                                        borderRadius: "10px",
-                                        padding: "4px 10px",
-                                        cursor: "pointer",
-                                      }}
-                                      onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
-                                    >
-                                      Preview Shipping Label
-                                    </button>
-                                  )}
+                                  {/* Shipping label preview removed */}
                                 </>
                               ) : (
                                 <a

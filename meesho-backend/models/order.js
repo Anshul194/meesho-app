@@ -150,12 +150,7 @@ const orderSchema = new mongoose.Schema(
     labelName: {
       type: String,
     },
-    shippingLabelPath: {
-      type: String,
-    },
-    shippingLabelName: {
-      type: String,
-    },
+    // shippingLabel fields removed
     isLableDownloaded: {
       type: Boolean,
       default: false,

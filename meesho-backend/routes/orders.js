@@ -23,7 +23,6 @@ router.route("/add").post(
   authJWT,
   upload.fields([
     { name: "label", maxCount: 1 },
-    { name: "shippinglabel", maxCount: 1 },
   ]),
   createOrder
 );

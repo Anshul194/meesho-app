@@ -676,22 +676,7 @@ const OrderHistory = () => {
                                       >
                                         Preview Label
                                       </button>
-                                      {order.shippingLabelPath && (
-                                        <button
-                                          style={{
-                                            marginLeft: "10px",
-                                            background: "#4caf50",
-                                            color: "#fff",
-                                            border: "none",
-                                            borderRadius: "10px",
-                                            padding: "4px 10px",
-                                            cursor: "pointer",
-                                          }}
-                                          onClick={() => window.open(`${API_ENDPOINT}/${order.shippingLabelPath.replace(/\\/g, '/')}`, '_blank')}
-                                        >
-                                          Preview Shipping Label
-                                        </button>
-                                      )}
+                                      {/* Shipping label preview removed */}
                                     </>
                                   )}
                                 </td>

@@ -23,7 +23,7 @@ const CreateOrder = () => {
   const [productsList, setProductsList] = useState([]);
   const [shippingMethods, setShippingMethods] = useState([]);
   const [selectedShippingMethod, setSelectedShippingMethod] = useState(null);
-  const [ownLabel, setOwnLabel] = useState(null);
+  // ownLabel removed: shippinglabel no longer used
   const [shippingCharge, setShippingCharge] = useState(0);
 
   const [open, setOpen] = React.useState(false);
@@ -497,33 +497,13 @@ const CreateOrder = () => {
       formData.append("clientId", clientId);
 
 
-      // For non-Meesho, require both label and shippinglabel ONLY if selected shipping method is 69e60bc22e8678f757162c5f
-      if (marketPlace !== "Meesho") {
-        if (selectedShippingMethod === "69e60bc22e8678f757162c5f") {
-          if (!label || !ownLabel) {
-            handleClose3();
-            showValidation("Please select both Label and Shipping Label files for this shipping method.");
-            return;
-          }
-          formData.append("label", label);
-          formData.append("shippinglabel", ownLabel);
-        } else {
-          if (!label) {
-            handleClose3();
-            showValidation("Please select the Label file.");
-            return;
-          }
-          formData.append("label", label);
-        }
-      } else {
-        // For Meesho, only label is required
-        if (!label) {
-          handleClose3();
-          showValidation("Please select the Label file.");
-          return;
-        }
-        formData.append("label", label);
+      // Label file required for creating orders
+      if (!label) {
+        handleClose3();
+        showValidation("Please select the Label file.");
+        return;
       }
+      formData.append("label", label);
 
       if (marketPlace !== "Meesho") {
         formData.append("shippingMethod", selectedShippingMethod);
@@ -628,6 +608,12 @@ const CreateOrder = () => {
       setProducts(updatedProducts);
     }
   };
+
+  // Determine the currently selected shipping method object and main upload label
+  const selectedMethod = shippingMethods.find((m) => m._id === selectedShippingMethod);
+  const mainUploadLabel = selectedMethod && selectedMethod.name === "Style4Sure Shipping"
+    ? "Tracking Shipping Label (PDF)"
+    : (marketPlace && marketPlace !== "Meesho" ? "Upload Product Label (PDF)" : "Upload Label (PDF)");
 
   
 
@@ -798,10 +784,7 @@ const CreateOrder = () => {
                         </div>
                       </div>
                       {/* Only show label upload if selected shipping method is the one with id 69e60bc22e8678f757162c5f */}
-                      {(() => {
-                        const selectedMethod = shippingMethods.find(m => m._id === selectedShippingMethod);
-                        return selectedMethod && selectedMethod._id === "69e60bc22e8678f757162c5f";
-                      })() && (
+                      {selectedMethod && selectedMethod._id === "69e60bc22e8678f757162c5f" && selectedMethod.name !== "My Own Shipping" && (
                           <div className="col-sm-6">
                             <div className="form-group">
                               <label>Upload Label (PDF)</label>
@@ -809,7 +792,7 @@ const CreateOrder = () => {
                                 type="file"
                                 accept=".pdf"
                                 className="form-control"
-                                onChange={e => setOwnLabel(e.target.files[0])}
+                                onChange={e => { /* shippinglabel removed */ }}
                               />
                             </div>
                           </div>
@@ -871,7 +854,7 @@ const CreateOrder = () => {
                     marginTop: "0px",
                   }}
                 >
-                  {marketPlace && marketPlace !== "Meesho" ? "Upload Product Label (PDF)" : "Upload Label (PDF)"}
+                  {mainUploadLabel}
                   <input
                     type="file"
                     style={{ display: "none" }}
