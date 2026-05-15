@@ -235,8 +235,13 @@ const getAllOrders = async (req, res) => {
     const orderNumber = req.query.orderNumber || req.params.orderNumber || "";
     const status = req.query.status || req.params.status || "";
     const isLableDownloaded = req.query.isLableDownloaded || req.params.isLableDownloaded || "";
+    const exportAll = req.query.exportAll === "true";
     const page = parseInt(req.query.page || req.params.page) || 1;
-    const limit = parseInt(req.query.limit || req.params.limit) || 10;
+    const limitValue = req.query.limit ?? req.params.limit;
+    const limit =
+      limitValue !== undefined && limitValue !== null && limitValue !== ""
+        ? parseInt(limitValue)
+        : 10;
     const from = req.query.from || req.params.from || "";
     const to = req.query.to || req.params.to || "";
 
@@ -342,15 +347,20 @@ const getAllOrders = async (req, res) => {
 
     // Pagination parameters
     const pageNumber = page;
-    const pageSize = limit;
-    const skip = (pageNumber - 1) * pageSize;
+    const pageSize = exportAll ? 0 : Number.isNaN(limit) ? 10 : limit;
+    const skip = pageSize > 0 ? (pageNumber - 1) * pageSize : 0;
 
     console.log(filter);
     // Fetch orders with pagination and filters
-    const orders = await Order.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(pageSize);
+    let orders;
+    if (exportAll) {
+      orders = await Order.find(filter).sort({ createdAt: -1 });
+    } else {
+      orders = await Order.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize);
+    }
 
     // Collect all shippingMethod ids present in the orders response
     const shippingMethodIds = new Set();
@@ -416,7 +426,7 @@ const getAllOrders = async (req, res) => {
       success: true,
       currentPage: pageNumber,
       totalOrders,
-      totalPages: Math.ceil(totalOrders / pageSize),
+      totalPages: pageSize > 0 ? Math.ceil(totalOrders / pageSize) : 1,
     });
   } catch (error) {
     console.error("Error fetching orders:", error);

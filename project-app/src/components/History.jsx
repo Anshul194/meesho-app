@@ -41,7 +41,6 @@ const style = {
 
 export default function Dorder() {
   const [orders, setOrders] = useState([]);
-  const [excelData, setExcelData] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -524,12 +523,11 @@ export default function Dorder() {
       const queryParams = [
         `clientId=${selectedClient || ""}`,
         `orderNumber=${searchValue}`,
-        `page=${page}`,
-        `limit=${0}`,
         `from=${startDate}`,
         `to=${endDate}`,
         `status=${status}`,
         `isLableDownloaded=true`,
+        `exportAll=true`,
       ];
       if (marketPlace) queryParams.push(`marketPlace=${encodeURIComponent(marketPlace)}`);
       if (shippingMethod) queryParams.push(`shippingMethod=${encodeURIComponent(shippingMethod)}`);
@@ -545,7 +543,59 @@ export default function Dorder() {
       const data = await response.json();
       console.log("Excel Data:", data);
       if (data.success) {
-        setExcelData(data.data);
+        const cleanedData = [];
+
+        for (let i = 0; i < data.data.length; i++) {
+          const order = data.data[i];
+          if (order.revisions === 1) {
+            for (let j = 0; j < order.orders.length; j++) {
+              const item = order.orders[j];
+              cleanedData.push({
+                "Market Place Order Number": item.marketPlaceOrderNumber || "",
+                Client: item.client?.clientName || "",
+                "Date & Time":
+                  item.status !== "Order Placed"
+                    ? formatDateTime(item.updatedAt)
+                    : formatDateTime(item.createdAt),
+                "Product Name": item.product?.productName || "",
+                "Product SKU": item.product?.productSKU || "",
+                "Master SKU": item.masterSKU || "",
+                "Product Price": item.productPrice || 0,
+                Quantity: item.quantity || 0,
+                Status: item.status || "No Status Found",
+                "Packing Charge": item.packingCharge || 0,
+                "Shipping Method": item.shippingMethod || "",
+                "Shipping Charge": item.shippingCharge !== undefined ? item.shippingCharge : "",
+                "Total Price": item.totalPrice || 0,
+                "Shipping Partner Name": item.shippingPartnerName || "",
+                "Tracking ID": item.trackingId || "",
+              });
+            }
+          } else {
+            cleanedData.push({
+              "Market Place Order Number": order.marketPlaceOrderNumber || "",
+              Client: order.client?.clientName || "",
+              "Date & Time":
+                order.status !== "Order Placed"
+                  ? formatDateTime(order.updatedAt)
+                  : formatDateTime(order.createdAt),
+              "Product Name": order.product?.productName || "",
+              "Product SKU": order.product?.productSKU || "",
+              "Master SKU": order.masterSKU || "",
+              "Product Price": order.productPrice || 0,
+              Quantity: order.quantity || 0,
+              Status: order.status || "No Status Found",
+              "Packing Charge": order.packingCharge || 0,
+              "Shipping Method": order.shippingMethod || "",
+              "Shipping Charge": order.shippingCharge !== undefined ? order.shippingCharge : "",
+              "Total Price": order.totalPrice || 0,
+              "Shipping Partner Name": order.shippingPartnerName || "",
+              "Tracking ID": order.trackingId || "",
+            });
+          }
+        }
+
+        exportToExcel(cleanedData, `Downloaded-Orders-${formatDateTime(new Date())}`);
       } else {
         console.error("Failed to fetch orders:", data.message);
       }
@@ -554,74 +604,6 @@ export default function Dorder() {
     } finally {
       setOpen3(false);
     }
-  };
-
-  useEffect(() => {
-    if (excelData.length > 0) {
-      cleanExcelData(excelData);
-    }
-  }, [excelData]);
-  const cleanExcelData = () => {
-    console.log("Excel Data from state before cleaning:", excelData);
-    let cleanedData = [];
-
-    for (let i = 0; i < excelData.length; i++) {
-      const order = excelData[i];
-      if (order.revisions === 1) {
-        for (let j = 0; j < order.orders.length; j++) {
-          const item = order.orders[j];
-          const cleanedOrder = {
-            "Market Place Order Number": item.marketPlaceOrderNumber || "",
-            Client: item.client?.clientName || "",
-            "Date & Time":
-              item.status !== "Order Placed"
-                ? formatDateTime(item.updatedAt)
-                : formatDateTime(item.createdAt),
-            "Product Name": item.product?.productName || "",
-            "Product SKU": item.product?.productSKU || "",
-            "Master SKU": item.masterSKU || "",
-            "Product Price": item.productPrice || 0,
-            Quantity: item.quantity || 0,
-            Status: item.status || "No Status Found",
-            "Packing Charge": item.packingCharge || 0,
-            "Shipping Method": item.shippingMethod || "",
-            "Shipping Charge": item.shippingCharge !== undefined ? item.shippingCharge : "",
-            "Total Price": item.totalPrice || 0,
-            "Shipping Partner Name": item.shippingPartnerName || "",
-            "Tracking ID": item.trackingId || "",
-          };
-          cleanedData.push(cleanedOrder);
-        }
-      } else {
-        const cleanedOrder = {
-          "Market Place Order Number": order.marketPlaceOrderNumber || "",
-          Client: order.client?.clientName || "",
-          "Date & Time":
-            order.status !== "Order Placed"
-              ? formatDateTime(order.updatedAt)
-              : formatDateTime(order.createdAt),
-          "Product Name": order.product?.productName || "",
-          "Product SKU": order.product?.productSKU || "",
-          "Master SKU": order.masterSKU || "",
-          "Product Price": order.productPrice || 0,
-          Quantity: order.quantity || 0,
-          Status: order.status || "No Status Found",
-          "Packing Charge": order.packingCharge || 0,
-          "Shipping Method": order.shippingMethod || "",
-          "Shipping Charge": order.shippingCharge !== undefined ? order.shippingCharge : "",
-          "Total Price": order.totalPrice || 0,
-          "Shipping Partner Name": order.shippingPartnerName || "",
-          "Tracking ID": order.trackingId || "",
-        };
-        cleanedData.push(cleanedOrder);
-      }
-    }
-
-    console.log("Cleaned Data array being sent to Excel:", cleanedData);
-    exportToExcel(
-      cleanedData,
-      `Downloaded-Orders-${formatDateTime(new Date())}`
-    );
   };
   const handleDownloadLabels = async () => {
     try {
