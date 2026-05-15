@@ -10,7 +10,7 @@ import {
   DialogTitle,
   Snackbar,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +48,7 @@ const CreateOrder = () => {
   const [snack, setSnack] = React.useState("");
   const [snackType, setSnackType] = React.useState("success");
   const [label, setLabel] = useState("");
+  const labelFileInputRef = useRef(null);
   const handleClick2 = () => {
     setOpen2(true);
   };
@@ -542,7 +543,14 @@ const CreateOrder = () => {
             masterSKU: "",
           },
         ]);
-        
+        // Reset all form fields after successful order
+        setLabel("");
+        setMarketPlace("");
+        setSelectedShippingMethod(null);
+        setShippingCharge(0);
+        if (labelFileInputRef.current) {
+          labelFileInputRef.current.value = "";
+        }
         setIsExploading(true);
       } else {
         setSnack(data.message);
@@ -611,9 +619,14 @@ const CreateOrder = () => {
 
   // Determine the currently selected shipping method object and main upload label
   const selectedMethod = shippingMethods.find((m) => m._id === selectedShippingMethod);
-  const mainUploadLabel = selectedMethod && selectedMethod.name === "Style4Sure Shipping"
-    ? "Tracking Shipping Label (PDF)"
+  const isStyle4SureShipping = selectedMethod && selectedMethod.name === "Style4Sure Shipping";
+  const mainUploadLabel = isStyle4SureShipping
+    ? "Tracking Shipping Label (Image / PDF)"
     : (marketPlace && marketPlace !== "Meesho" ? "Upload Product Label (PDF)" : "Upload Label (PDF)");
+  // Accept images + PDF for Style4Sure Shipping; only PDF otherwise
+  const labelFileAccept = isStyle4SureShipping
+    ? ".pdf,image/*"
+    : ".pdf";
 
   
 
@@ -858,14 +871,11 @@ const CreateOrder = () => {
                   <input
                     type="file"
                     style={{ display: "none" }}
+                    ref={labelFileInputRef}
                     onChange={e => {
-                      if (marketPlace && marketPlace !== "Meesho") {
-                        setLabel(e.target.files[0]);
-                      } else {
-                        setLabel(e.target.files[0]);
-                      }
+                      setLabel(e.target.files[0]);
                     }}
-                    accept=".pdf"
+                    accept={labelFileAccept}
                   />
                 </Button>
                 {label && <p style={{ marginLeft: "10px" }}>{label.name}</p>}
