@@ -950,7 +950,9 @@ const updateOrdersStatus = async (req, res) => {
             // Style4Sure Shipping Logic
             if (statusLower.includes("cancelled")) {
               amount_credit = currentTotalPrice - currentPackingCharge;
-            } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return")) {
+            } else if (statusLower.includes("wrong rto return")) {
+              amount_credit = 0;
+            } else if (statusLower.includes("right rto return")) {
               // Refund = Product - Shipping (Double deduction: 1x forward + 1x return)
               amount_credit = currentTotalPrice - (currentPackingCharge + 2 * currentShippingCharge);
             } else if (statusLower.includes("right customer return")) {
@@ -962,7 +964,9 @@ const updateOrdersStatus = async (req, res) => {
             // Standard Logic for other shipping methods
             if (statusLower.includes("cancelled")) {
               amount_credit = currentTotalPrice - currentPackingCharge;
-            } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return") || statusLower.includes("right customer return")) {
+            } else if (statusLower.includes("wrong rto return")) {
+              amount_credit = 0;
+            } else if (statusLower.includes("right rto return") || statusLower.includes("right customer return")) {
               amount_credit = currentTotalPrice - currentPackingCharge;
             } else {
               amount_credit = 0;
@@ -1085,7 +1089,9 @@ const updateOrdersStatus = async (req, res) => {
                 // Style4Sure Shipping Logic
                 if (statusLower.includes("cancelled")) {
                   amount_credit = currentTotalPrice - currentPackingCharge;
-                } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return")) {
+                } else if (statusLower.includes("wrong rto return")) {
+                  amount_credit = 0;
+                } else if (statusLower.includes("right rto return")) {
                   // Refund = Product - Shipping (Double deduction: 1x forward + 1x return)
                   amount_credit = currentTotalPrice - (currentPackingCharge + 2 * currentShippingCharge);
                 } else if (statusLower.includes("right customer return")) {
@@ -1097,7 +1103,9 @@ const updateOrdersStatus = async (req, res) => {
                 // Standard Logic for other shipping methods
                 if (statusLower.includes("cancelled")) {
                   amount_credit = currentTotalPrice - currentPackingCharge;
-                } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return") || statusLower.includes("right customer return")) {
+                } else if (statusLower.includes("wrong rto return")) {
+                  amount_credit = 0;
+                } else if (statusLower.includes("right rto return") || statusLower.includes("right customer return")) {
                   amount_credit = currentTotalPrice - currentPackingCharge;
                 } else {
                   amount_credit = 0;
@@ -1452,6 +1460,7 @@ const updateOrdersStatusFromExcel = async (req, res) => {
 
           const targetShippingMethodId = "69e60bb32e8678f757162c5c";
           const methodVal = String(order.shippingMethod || "");
+          const isMyOwnShipping = methodVal.toLowerCase().includes("my own shipping");
           let currentShippingCharge = order.shippingCharge || 0;
           const currentPackingCharge = order.packingCharge || 0;
           const currentTotalPrice = order.totalPrice || 0;
@@ -1488,7 +1497,9 @@ const updateOrdersStatusFromExcel = async (req, res) => {
             // Style4Sure Shipping Logic
             if (statusLower.includes("cancelled")) {
               amount_credit = currentTotalPrice - currentPackingCharge;
-            } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return")) {
+            } else if (statusLower.includes("wrong rto return")) {
+              amount_credit = 0;
+            } else if (statusLower.includes("right rto return")) {
               // Refund = Product - Shipping (Double deduction: 1x forward + 1x return)
               amount_credit = currentTotalPrice - (currentPackingCharge + 2 * currentShippingCharge);
             } else if (statusLower.includes("right customer return")) {
@@ -1500,7 +1511,9 @@ const updateOrdersStatusFromExcel = async (req, res) => {
             // Standard Logic for other shipping methods
             if (statusLower.includes("cancelled")) {
               amount_credit = currentTotalPrice - currentPackingCharge;
-            } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return") || statusLower.includes("right customer return")) {
+            } else if (statusLower.includes("wrong rto return")) {
+              amount_credit = 0;
+            } else if (statusLower.includes("right rto return") || statusLower.includes("right customer return")) {
               amount_credit = currentTotalPrice - currentPackingCharge;
             } else {
               amount_credit = 0;
@@ -1585,6 +1598,7 @@ const updateOrdersStatusFromExcel = async (req, res) => {
                   let amount_credit = 0;
                   const targetShippingMethodId = "69e60bb32e8678f757162c5c";
                   const methodVal = String(order.orders[j].shippingMethod || "");
+                  const isMyOwnShipping = methodVal.toLowerCase().includes("my own shipping");
                   let currentShippingCharge = order.orders[j].shippingCharge || 0;
                   const currentPackingCharge = order.orders[j].packingCharge || 0;
                   const currentTotalPrice = order.orders[j].totalPrice || 0;
@@ -1621,7 +1635,9 @@ const updateOrdersStatusFromExcel = async (req, res) => {
                     // Style4Sure Shipping Logic
                     if (statusLower.includes("cancelled")) {
                       amount_credit = currentTotalPrice - currentPackingCharge;
-                    } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return")) {
+                    } else if (statusLower.includes("wrong rto return")) {
+                      amount_credit = 0;
+                    } else if (statusLower.includes("right rto return")) {
                       // Refund = Product - Shipping (Double deduction: 1x forward + 1x return)
                       amount_credit = currentTotalPrice - (currentPackingCharge + 2 * currentShippingCharge);
                     } else if (statusLower.includes("right customer return")) {
@@ -1633,7 +1649,9 @@ const updateOrdersStatusFromExcel = async (req, res) => {
                     // Standard Logic for other shipping methods
                     if (statusLower.includes("cancelled")) {
                       amount_credit = currentTotalPrice - currentPackingCharge;
-                    } else if (statusLower.includes("right rto return") || statusLower.includes("wrong rto return") || statusLower.includes("right customer return")) {
+                    } else if (statusLower.includes("wrong rto return")) {
+                      amount_credit = 0;
+                    } else if (statusLower.includes("right rto return") || statusLower.includes("right customer return")) {
                       amount_credit = currentTotalPrice - currentPackingCharge;
                     } else {
                       amount_credit = 0;
