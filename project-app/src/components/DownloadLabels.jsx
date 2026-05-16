@@ -203,8 +203,9 @@ export default function DownloadLabels() {
         // Provide feedback to the user that the download is complete
         // Hide loading spinner or update message
       } else {
+        const errorData = await response.json().catch(() => ({}));
         setSnackType("error");
-        setSnack("Error downloading labels");
+        setSnack(errorData.message || "Error downloading labels");
         handleClick();
       }
     } catch (error) {

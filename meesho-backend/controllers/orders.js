@@ -24,13 +24,35 @@ const resolveStoredFilePath = (storedPath) => {
     return null;
   }
 
+  // Normalize path separators
   const normalizedPath = String(storedPath).replace(/\\/g, path.sep);
 
-  if (path.isAbsolute(normalizedPath)) {
+  // 1. Try as is (absolute or relative)
+  if (fs.existsSync(normalizedPath)) {
     return normalizedPath;
   }
 
-  return path.resolve(process.cwd(), normalizedPath);
+  // 2. Try relative to process.cwd()
+  const relativePath = path.resolve(process.cwd(), normalizedPath);
+  if (fs.existsSync(relativePath)) {
+    return relativePath;
+  }
+
+  // 3. Fallback: If it's an absolute path that doesn't exist, try looking in 'uploads' directory
+  // This helps when the DB contains absolute paths from a different environment/machine
+  const filename = path.basename(normalizedPath);
+  const uploadsPath = path.resolve(process.cwd(), "uploads", filename);
+  if (fs.existsSync(uploadsPath)) {
+    return uploadsPath;
+  }
+
+  // 4. Try inside meesho-backend/uploads (if process.cwd is project root)
+  const backendUploadsPath = path.resolve(process.cwd(), "meesho-backend", "uploads", filename);
+  if (fs.existsSync(backendUploadsPath)) {
+    return backendUploadsPath;
+  }
+
+  return normalizedPath; // Return original if nothing found, so existence check will fail
 };
 
 // const createOrder = async (req, res) => {
@@ -1234,31 +1256,36 @@ const downloadLabels = async (req, res) => {
     // Find orders based on the query
     const order1 = await Order.find(query).sort({ createdAt: -1 });
 
-    const orders = order1.filter(
-      (o) =>
-        o.isLableDownloaded === isLableDownloaded && o.labelPath && o.labelName
-    );
+    const orders = order1.filter((o) => {
+      const isDownloadedMatch =
+        isLableDownloaded === undefined || o.isLableDownloaded === isLableDownloaded;
+      return isDownloadedMatch && o.labelPath && o.labelName;
+    });
 
     if (orders.length > 0) {
+      let filesAdded = 0;
       for (const order of orders) {
         const labelPath = resolveStoredFilePath(order.labelPath);
-        if (fs.existsSync(labelPath)) {
-          mergedPdfPath.push(labelPath);
+        if (labelPath && fs.existsSync(labelPath) && labelPath.toLowerCase().endsWith(".pdf")) {
+          try {
+            await merger.add(labelPath);
+            filesAdded++;
+          } catch (err) {
+            console.error(`Failed to add PDF ${labelPath}: ${err.message}`);
+          }
         } else {
-          console.error(`File not found: ${labelPath}`);
+          console.error(`File not found or invalid: ${labelPath}`);
         }
       }
 
-      for (const path of mergedPdfPath) {
-        // Check if the file has a PDF extension
-        if (path.toLowerCase().endsWith(".pdf") && fs.existsSync(path)) {
-          await merger.add(path);
-        } else {
-          console.error(`Invalid or non-existent PDF file: ${path}`);
-        }
+      if (filesAdded === 0) {
+        return res.status(400).json({
+          message: "No valid PDF labels found to download",
+          success: false,
+        });
       }
 
-      const tempMergedPdfPath = "labels.pdf";
+      const tempMergedPdfPath = path.join(process.cwd(), `labels-${Date.now()}.pdf`);
       await merger.save(tempMergedPdfPath);
 
       // Check if the merged PDF file was created successfully
@@ -1266,21 +1293,30 @@ const downloadLabels = async (req, res) => {
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", `attachment; filename=labels.pdf`);
 
-        res.sendFile(tempMergedPdfPath, { root: "." }, async (err) => {
+        res.sendFile(tempMergedPdfPath, async (err) => {
           if (err) {
             console.error("Error sending file:", err);
-            return res
-              .status(500)
-              .json({ message: "Error sending file", success: false });
+            // If headers are already sent, we can't send a JSON response
+            if (!res.headersSent) {
+              return res
+                .status(500)
+                .json({ message: "Error sending file", success: false });
+            }
           }
 
           // Delete the temporary merged PDF file after sending
-          fs.unlinkSync(tempMergedPdfPath);
+          fs.unlink(tempMergedPdfPath, (unlinkErr) => {
+            if (unlinkErr) console.error(`Error deleting temp file ${tempMergedPdfPath}:`, unlinkErr);
+          });
+
           if (!isLableDownloaded) {
             for (const order of orders) {
-              if (order.isLableDownloaded === false) {
-                order.isLableDownloaded = true;
-                await order.save();
+              const labelPath = resolveStoredFilePath(order.labelPath);
+              if (labelPath && fs.existsSync(labelPath) && labelPath.toLowerCase().endsWith(".pdf")) {
+                if (order.isLableDownloaded === false) {
+                  order.isLableDownloaded = true;
+                  await order.save();
+                }
               }
             }
           }

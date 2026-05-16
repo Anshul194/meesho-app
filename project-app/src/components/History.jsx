@@ -218,8 +218,8 @@ export default function Dorder() {
     }
   };
 
-  const isOwnShippingMethod = (method) =>
-    String(method || "").trim().toLowerCase() === "my own shipping";
+  const isStyle4SureShipping = (method) =>
+    String(method || "").trim().toLowerCase() === "style4sure shipping";
 
   // const handleFilter = (status) => {
   //   const selectedOrders = orders.filter((order) => order.selected);
@@ -1016,7 +1016,7 @@ export default function Dorder() {
                                         <i className="fa-solid fa-download pr-2"></i>{" "}
                                         Label
                                       </a>
-                                      {!isOwnShippingMethod(item.shippingMethod) && (
+                                      {isStyle4SureShipping(item.shippingMethod) && (
                                         <button
                                           style={{
                                             textDecoration: "none",
@@ -1174,7 +1174,7 @@ export default function Dorder() {
                                     <i className="fa-solid fa-download pr-2"></i>{" "}
                                     Label
                                   </a>
-                                  {!isOwnShippingMethod(order.shippingMethod) && (
+                                  {isStyle4SureShipping(order.shippingMethod) && (
                                     <button
                                       style={{
                                         textDecoration: "none",
