@@ -2991,7 +2991,7 @@ input[type=button].btn-block, input[type=reset].btn-block, input[type=submit].bt
     transition: transform .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out, -webkit-transform .15s ease-in-out;
 }
 @media (prefers-reduced-motion:reduce) {
-    .custom-switch .custom-control-label: :after {
+    .custom-switch .custom-control-label::after {
     transition: none;
 }
 }.custom-switch .custom-control-input:checked~.custom-control-label::after {
@@ -3153,7 +3153,7 @@ input[type=button].btn-block, input[type=reset].btn-block, input[type=submit].bt
     appearance: none;
 }
 @media (prefers-reduced-motion:reduce) {
-    .custom-range: :-webkit-slider-thumb {
+    .custom-range::-webkit-slider-thumb {
     -webkit-transition: none;
     transition: none;
 }
@@ -3181,7 +3181,7 @@ input[type=button].btn-block, input[type=reset].btn-block, input[type=submit].bt
     appearance: none;
 }
 @media (prefers-reduced-motion:reduce) {
-    .custom-range: :-moz-range-thumb {
+    .custom-range::-moz-range-thumb {
     -moz-transition: none;
     transition: none;
 }
@@ -3211,7 +3211,7 @@ input[type=button].btn-block, input[type=reset].btn-block, input[type=submit].bt
     appearance: none;
 }
 @media (prefers-reduced-motion:reduce) {
-    .custom-range: :-ms-thumb {
+    .custom-range::-ms-thumb {
     -ms-transition: none;
     transition: none;
 }
@@ -3255,7 +3255,7 @@ input[type=button].btn-block, input[type=reset].btn-block, input[type=submit].bt
     transition: background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
 }
 @media (prefers-reduced-motion:reduce) {
-    .custom-control-label: :before, .custom-file-label, .custom-select {
+    .custom-control-label::before, .custom-file-label, .custom-select {
     transition: none;
 }
 }.nav {
@@ -8070,7 +8070,7 @@ a.text-dark:focus, a.text-dark:hover {
     visibility: hidden!important;
 }
 @media print {
-    *, : :after, ::before {
+    *, ::after, ::before {
     text-shadow: none!important;
     box-shadow: none!important;
 }

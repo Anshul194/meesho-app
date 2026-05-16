@@ -1,3 +1,8 @@
+@import url("https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700");
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap");
+
 /*-----------------------  side bar-------------------------------------------  */
 ul,
 ol {
@@ -31,11 +36,8 @@ ol {
   /* Smooth transition for link color */
 }
 
-.has-arrow {
-  @import url("https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700");
-  @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&amp;display=swap");
-  @import url("https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&amp;display=swap");
-  @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap");
+
+
 
   @font-face {
     font-family: 'simple-Line-Icons';
@@ -1914,8 +1916,8 @@ ol {
 
   .notifications>li:nth-child(1) {
     transform: none;
-    -webkit-animation-delay: none;
-    animation-delay: none;
+    -webkit-animation-delay: 0s;
+    animation-delay: 0s;
     opacity: 1
   }
 
@@ -1950,8 +1952,8 @@ ol {
 
   .metismenu>li ul li:nth-child(1) {
     transform: none;
-    -webkit-animation-delay: none;
-    animation-delay: none;
+    -webkit-animation-delay: 0s;
+    animation-delay: 0s;
     opacity: 1
   }
 
@@ -11047,8 +11049,7 @@ ol {
     font-size: 25px;
   }
 
-  margin-right:3px;
-}
+
 
 
 
@@ -11102,5 +11103,5 @@ ol {
 
 img {
   vertical-align: middle;
-  border-style: none
+  border-style: none;
 }

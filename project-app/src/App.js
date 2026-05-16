@@ -36,8 +36,6 @@ import { Box, Drawer, List, ListItem } from "@mui/material";
 import DownloadLabels from "./components/DownloadLabels";
 import UploadLabels from "./components/UploadLabels";
 
-<link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
-
 
 function App() {
   const [user, setUser] = useState(null);
