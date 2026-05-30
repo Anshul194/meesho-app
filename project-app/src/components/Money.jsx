@@ -7,6 +7,7 @@ import "../assets/vendor/toastr/toastr.min.css";
 import "../assets/vendor/charts-c3/plugin.css";
 import { API_ENDPOINT } from "../util";
 import { Alert, Snackbar } from "@mui/material";
+import Select from "react-select";
 
 export default function Add() {
   const [clients, setClients] = useState([]);
@@ -22,7 +23,7 @@ export default function Add() {
   const [snackType, setSnackType] = React.useState("success");
   const [orderId, setOrderId] = React.useState("");
   const [itemId, setItemId] = React.useState("");
-  
+
 
   const handleClick = () => {
     setOpen(true);
@@ -64,7 +65,7 @@ export default function Add() {
     const fetchOrders = async () => {
       try {
         const response = await fetch(
-          `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${selectedClient}`,
+          `${API_ENDPOINT}/api/v1/orders/selected/all?clientId=${selectedClient}&exportAll=true`,
           {
             method: "GET",
             headers: {
@@ -86,17 +87,22 @@ export default function Add() {
     }
   }, [selectedClient]);
 
-  const handleClientChange = (event) => {
-    setSelectedClient(event.target.value);
-    console.log(event.target.value);
+  const handleClientChange = (selectedOption) => {
+    setSelectedClient(selectedOption ? selectedOption.value : "");
+    console.log(selectedOption ? selectedOption.value : "");
   };
 
+  const handleOrderChange = (selectedOption) => {
+    if (!selectedOption) {
+      setSelectedOrder("");
+      setOrderId("");
+      setItemId(null);
+      return;
+    }
+    const value = selectedOption.value;
+    setSelectedOrder(value);
 
-
-  const handleOrderChange = (event) => {
-    setSelectedOrder(event.target.value);
-
-    const selectedOrderIds = event.target.value.split(",");
+    const selectedOrderIds = value.split(",");
 
     if (selectedOrderIds.length === 1) {
       setOrderId(selectedOrderIds[0]);
@@ -168,22 +174,24 @@ export default function Add() {
               <div className="col-sm-6">
                 <div className="form-group">
                   <label for="exampleFormControlSelect1">Select Client</label>
-                  <select
-                    className="form-control"
-                    id="exampleFormControlSelect1"
+                  <Select
+                    options={clients && clients.map((client) => ({
+                      value: client._id,
+                      label: client.clientName,
+                    }))}
                     onChange={handleClientChange}
-                    value={selectedClient}
-                    required
-                  >
-                    <option value="">Select Client</option>
-
-                    {clients &&
-                      clients.map((client) => (
-                        <option key={client._id} value={client._id}>
-                          {client.clientName}
-                        </option>
-                      ))}
-                  </select>
+                    value={
+                      clients &&
+                      clients
+                        .map((client) => ({
+                          value: client._id,
+                          label: client.clientName,
+                        }))
+                        .find((option) => option.value === selectedClient)
+                    }
+                    placeholder="Select Client"
+                    isClearable
+                  />
                 </div>
               </div>
               <div className="col-sm-6">
@@ -221,46 +229,46 @@ export default function Add() {
                   <label htmlFor="exampleFormControlSelect3">
                     Market Place Order Number
                   </label>
-                  <select
-                    className="form-control"
-                    id="exampleFormControlSelect3"
-                    // Set the value to the selected order ID
-                    value={selectedOrder}
-                    onChange={handleOrderChange} // Handle order selection
-                    required
-                  >
-                    <option value="">Select Market Place Order Number</option>
-                    {/* {orders && orders.length > 0 ? (
-                      orders.map((order) => (
-                        <option key={order._id} value={order._id}>
-                          {order.marketPlaceOrderNumber}
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>No orders available</option>
-                    )} */}
-
-                    {orders && orders.length > 0 ? (
-                      orders.map((order) =>
-                        order.revisions && order.revisions === 1 ? (
-                          order.orders.map((subOrder) => (
-                            <option
-                              key={subOrder._id}
-                              value={`${order._id},${subOrder._id}`}
-                            >
-                              {subOrder.marketPlaceOrderNumber}
-                            </option>
-                          ))
-                        ) : (
-                          <option key={order._id} value={order._id}>
-                            {order.marketPlaceOrderNumber}
-                          </option>
-                        )
+                  <Select
+                    options={
+                      orders &&
+                      orders.flatMap((order) =>
+                        order.revisions && order.revisions === 1
+                          ? order.orders.map((subOrder) => ({
+                            value: `${order._id},${subOrder._id}`,
+                            label: subOrder.marketPlaceOrderNumber,
+                          }))
+                          : [
+                            {
+                              value: order._id,
+                              label: order.marketPlaceOrderNumber,
+                            },
+                          ]
                       )
-                    ) : (
-                      <option disabled>No orders available</option>
-                    )}
-                  </select>
+                    }
+                    onChange={handleOrderChange}
+                    value={
+                      orders &&
+                      orders
+                        .flatMap((order) =>
+                          order.revisions && order.revisions === 1
+                            ? order.orders.map((subOrder) => ({
+                              value: `${order._id},${subOrder._id}`,
+                              label: subOrder.marketPlaceOrderNumber,
+                            }))
+                            : [
+                              {
+                                value: order._id,
+                                label: order.marketPlaceOrderNumber,
+                              },
+                            ]
+                        )
+                        .find((option) => option.value === selectedOrder)
+                    }
+                    placeholder="Select Market Place Order Number"
+                    isClearable
+                    noOptionsMessage={() => (selectedClient ? "No orders available" : "Please select a client first")}
+                  />
                 </div>
               </div>
             </div>
