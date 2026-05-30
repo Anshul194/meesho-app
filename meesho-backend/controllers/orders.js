@@ -10,6 +10,7 @@ const ProductFileURL = require("../models/productFileUrl");
 const Transaction = require("../models/transaction");
 const xlsx = require("xlsx");
 const PDFMerger = require("pdf-merger-js");
+const PDFDocument = require("pdfkit");
 const MasterSKU = require("../models/masterSKU");
 const ShippingMethod = require("../models/shippingMethod");
 const { Order } = require("../models/order");
@@ -18,6 +19,17 @@ const path = require("path");
 
 // const { ObjectId } = require("mongodb");
 const { mongoose } = require("mongoose");
+
+// Helper to make path relative to 'uploads' for storage and response
+const makeRelative = (p) => {
+  if (!p || typeof p !== "string") return p;
+  const parts = p.split(/[\\\/]/);
+  const uploadsIdx = parts.findIndex(part => part.toLowerCase() === "uploads");
+  if (uploadsIdx !== -1) {
+    return parts.slice(uploadsIdx).join("/");
+  }
+  return p;
+};
 
 const resolveStoredFilePath = (storedPath) => {
   if (!storedPath) {
@@ -138,12 +150,12 @@ const createOrder = async (req, res) => {
     let labelPath = null, labelName = null;
     if (req.files) {
       if (req.files['label'] && req.files['label'][0]) {
-        labelPath = req.files['label'][0].path;
+        labelPath = makeRelative(req.files['label'][0].path);
         labelName = req.files['label'][0].originalname;
       }
     } else if (req.file) {
       // fallback for single file upload (legacy)
-      labelPath = req.file.path;
+      labelPath = makeRelative(req.file.path);
       labelName = req.file.originalname;
     }
 
@@ -417,20 +429,45 @@ const getAllOrders = async (req, res) => {
       }
     }
 
-    // Replace shippingMethod ids with human-readable names in the returned orders
+    // Replace shippingMethod ids with human-readable names and clean up file paths
     const mappedOrders = orders.map((ord) => {
-      const o = ord.toObject ? ord.toObject() : JSON.parse(JSON.stringify(ord));
+      // Use a plain object to ensure property modification works
+      const o = JSON.parse(JSON.stringify(ord));
+
+      // 1. Clean top-level paths
+      o.labelPath = makeRelative(o.labelPath);
+      o.trackingLabelPath = makeRelative(o.trackingLabelPath);
+      if (o.product && o.product.filePath) {
+        o.product.filePath = makeRelative(o.product.filePath);
+      }
+
+      // 2. Clean paths in sub-orders (revisions/bulk case)
       if (Array.isArray(o.orders)) {
         o.orders = o.orders.map((it) => {
+          if (it.product && it.product.filePath) {
+            it.product.filePath = makeRelative(it.product.filePath);
+          }
+          if (it.labelPath) {
+            it.labelPath = makeRelative(it.labelPath);
+          }
+          if (it.trackingLabelPath) {
+            it.trackingLabelPath = makeRelative(it.trackingLabelPath);
+          }
+
+          // Also populate shipping method name
           if (it && it.shippingMethod) {
-            const mapped = shippingMethodMap[it.shippingMethod] || it.shippingMethod;
+            const mapped =
+              shippingMethodMap[it.shippingMethod] || it.shippingMethod;
             return { ...it, shippingMethod: mapped };
           }
           return it;
         });
       }
+
+      // 3. Populate top-level shipping method name
       if (o.shippingMethod) {
-        o.shippingMethod = shippingMethodMap[o.shippingMethod] || o.shippingMethod;
+        o.shippingMethod =
+          shippingMethodMap[o.shippingMethod] || o.shippingMethod;
       }
       return o;
     });
@@ -744,10 +781,24 @@ const getAllBulkOrders = async (req, res) => {
       });
     }
 
+    // Normalize file paths
+    const normalizedBulkOrders = bulkOrders.map((ord) => {
+      const o = ord.toObject ? ord.toObject() : JSON.parse(JSON.stringify(ord));
+      const makeRelative = (p) => {
+        if (!p || typeof p !== "string") return p;
+        const root = "uploads";
+        const idx = p.toLowerCase().lastIndexOf(root);
+        if (idx !== -1) return p.substring(idx).replace(/\\/g, "/");
+        return p;
+      };
+      if (o.filePath) o.filePath = makeRelative(o.filePath);
+      return o;
+    });
+
     // Return the list of orders
     res.status(200).json({
       message: "Orders retrieved successfully",
-      data: bulkOrders,
+      data: normalizedBulkOrders,
       success: true,
     });
   } catch (error) {
@@ -943,8 +994,8 @@ const updateOrdersStatus = async (req, res) => {
           // Resolve actual shipping method if it's Style4Sure
           let isStyle4Sure = false;
           if (
-            methodVal === targetShippingMethodId || 
-            methodVal.toLowerCase().includes("style4sure") || 
+            methodVal === targetShippingMethodId ||
+            methodVal.toLowerCase().includes("style4sure") ||
             (orderDoc.marketPlaceOrderNumber && orderDoc.marketPlaceOrderNumber.toUpperCase().includes("S4S"))
           ) {
             isStyle4Sure = true;
@@ -1082,8 +1133,8 @@ const updateOrdersStatus = async (req, res) => {
               // Resolve actual shipping method if it's Style4Sure
               let isStyle4Sure = false;
               if (
-                methodVal === targetShippingMethodId || 
-                methodVal.toLowerCase().includes("style4sure") || 
+                methodVal === targetShippingMethodId ||
+                methodVal.toLowerCase().includes("style4sure") ||
                 (orderDoc.orders[j].marketPlaceOrderNumber && orderDoc.orders[j].marketPlaceOrderNumber.toUpperCase().includes("S4S"))
               ) {
                 isStyle4Sure = true;
@@ -1264,23 +1315,53 @@ const downloadLabels = async (req, res) => {
 
     if (orders.length > 0) {
       let filesAdded = 0;
+      const tempFiles = [];
+
       for (const order of orders) {
         const labelPath = resolveStoredFilePath(order.labelPath);
-        if (labelPath && fs.existsSync(labelPath) && labelPath.toLowerCase().endsWith(".pdf")) {
+        if (!labelPath || !fs.existsSync(labelPath)) {
+          console.error(`File not found: ${labelPath}`);
+          continue;
+        }
+
+        const ext = labelPath.toLowerCase();
+        if (ext.endsWith(".pdf")) {
           try {
             await merger.add(labelPath);
             filesAdded++;
           } catch (err) {
             console.error(`Failed to add PDF ${labelPath}: ${err.message}`);
           }
-        } else {
-          console.error(`File not found or invalid: ${labelPath}`);
+        } else if (ext.endsWith(".jpg") || ext.endsWith(".jpeg") || ext.endsWith(".png")) {
+          try {
+            // Convert image to a temporary PDF
+            const imgTempPath = path.join(process.cwd(), `img-temp-${Date.now()}-${Math.random().toString(36).substring(7)}.pdf`);
+            const doc = new PDFDocument({ margin: 0, size: 'A4' });
+            const stream = fs.createWriteStream(imgTempPath);
+            doc.pipe(stream);
+
+            // Draw image to fill page (adjusting for A4)
+            doc.image(labelPath, 0, 0, { width: 595.28, height: 841.89 });
+            doc.end();
+
+            // Wait for stream to finish
+            await new Promise((resolve, reject) => {
+              stream.on('finish', resolve);
+              stream.on('error', reject);
+            });
+
+            await merger.add(imgTempPath);
+            tempFiles.push(imgTempPath);
+            filesAdded++;
+          } catch (err) {
+            console.error(`Failed to convert and add image ${labelPath}: ${err.message}`);
+          }
         }
       }
 
       if (filesAdded === 0) {
         return res.status(400).json({
-          message: "No valid PDF labels found to download",
+          message: "No valid label files found to download",
           success: false,
         });
       }
@@ -1294,34 +1375,34 @@ const downloadLabels = async (req, res) => {
         res.setHeader("Content-Disposition", `attachment; filename=labels.pdf`);
 
         res.sendFile(tempMergedPdfPath, async (err) => {
+          // Cleanup all temp files
+          [tempMergedPdfPath, ...tempFiles].forEach(f => {
+            if (fs.existsSync(f)) fs.unlink(f, (err) => { if (err) console.error(err); });
+          });
+
           if (err) {
             console.error("Error sending file:", err);
-            // If headers are already sent, we can't send a JSON response
             if (!res.headersSent) {
-              return res
-                .status(500)
-                .json({ message: "Error sending file", success: false });
+              return res.status(500).json({ message: "Error sending file", success: false });
             }
           }
 
-          // Delete the temporary merged PDF file after sending
-          fs.unlink(tempMergedPdfPath, (unlinkErr) => {
-            if (unlinkErr) console.error(`Error deleting temp file ${tempMergedPdfPath}:`, unlinkErr);
-          });
-
           if (!isLableDownloaded) {
             for (const order of orders) {
-              const labelPath = resolveStoredFilePath(order.labelPath);
-              if (labelPath && fs.existsSync(labelPath) && labelPath.toLowerCase().endsWith(".pdf")) {
-                if (order.isLableDownloaded === false) {
-                  order.isLableDownloaded = true;
-                  await order.save();
-                }
+              const lp = resolveStoredFilePath(order.labelPath);
+              const isHandled = lp && fs.existsSync(lp) && (lp.toLowerCase().endsWith(".pdf") || lp.toLowerCase().endsWith(".jpg") || lp.toLowerCase().endsWith(".jpeg") || lp.toLowerCase().endsWith(".png"));
+              if (isHandled && order.isLableDownloaded === false) {
+                order.isLableDownloaded = true;
+                await order.save();
               }
             }
           }
         });
       } else {
+        // Cleanup temp files if save failed
+        tempFiles.forEach(f => {
+          if (fs.existsSync(f)) fs.unlink(f, (err) => { });
+        });
         console.error("Merged PDF file was not created successfully");
         return res.status(500).json({
           message: "Merged PDF file was not created successfully",
@@ -1329,9 +1410,10 @@ const downloadLabels = async (req, res) => {
         });
       }
     } else {
+
       return res
-        .status(200)
-        .json({ message: "No orders found", success: false });
+        .status(400)
+        .json({ message: "No orders found with valid label files", success: false });
     }
   } catch (error) {
     console.error("Error downloading labels:", error.message);
@@ -1361,7 +1443,7 @@ const uploadSingleLabel = async (req, res) => {
     }
 
     // Update the existing order with the label information
-    existingOrder.labelPath = labelPath;
+    existingOrder.labelPath = makeRelative(labelPath);
     existingOrder.labelName = labelName;
     // shipping label handling removed
 
@@ -1504,8 +1586,8 @@ const updateOrdersStatusFromExcel = async (req, res) => {
           // Resolve actual shipping method if it's Style4Sure
           let isStyle4Sure = false;
           if (
-            methodVal === targetShippingMethodId || 
-            methodVal.toLowerCase().includes("style4sure") || 
+            methodVal === targetShippingMethodId ||
+            methodVal.toLowerCase().includes("style4sure") ||
             (order.marketPlaceOrderNumber && order.marketPlaceOrderNumber.toUpperCase().includes("S4S"))
           ) {
             isStyle4Sure = true;
@@ -1642,8 +1724,8 @@ const updateOrdersStatusFromExcel = async (req, res) => {
                   // Resolve actual shipping method if it's Style4Sure
                   let isStyle4Sure = false;
                   if (
-                    methodVal === targetShippingMethodId || 
-                    methodVal.toLowerCase().includes("style4sure") || 
+                    methodVal === targetShippingMethodId ||
+                    methodVal.toLowerCase().includes("style4sure") ||
                     (market_place_order_number && market_place_order_number.toUpperCase().includes("S4S"))
                   ) {
                     isStyle4Sure = true;

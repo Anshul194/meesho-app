@@ -3,9 +3,22 @@ const Label = require("../models/labels");
 const Manifest = require("../models/manifest");
 const User = require("../models/user");
 const PDFMerger = require("pdf-merger-js");
+const PDFDocument = require("pdfkit");
 const fs = require("fs");
+const path = require("path");
 const { Order } = require("../models/order");
 const { default: mongoose } = require("mongoose");
+
+// Helper to make path relative to 'uploads' for storage and response
+const makeRelative = (p) => {
+  if (!p || typeof p !== "string") return p;
+  const parts = p.split(/[\\\/]/);
+  const uploadsIdx = parts.findIndex(part => part.toLowerCase() === "uploads");
+  if (uploadsIdx !== -1) {
+    return parts.slice(uploadsIdx).join("/");
+  }
+  return p;
+};
 const createClient = async (req, res) => {
   try {
     const { clientData } = req.body;
@@ -199,18 +212,18 @@ const getClientDetail = async (req, res) => {
   try {
     const id = req.params.id;
     // prettier-ignore
-    if (!id) return res.status(200).json({message: 'Client id not provided',data: null,success: false,})
+    if (!id) return res.status(200).json({ message: 'Client id not provided', data: null, success: false, })
     // prettier-ignore
 
     // prettier-ignore
-    const doc = await Client.findById( id)
+    const doc = await Client.findById(id)
     // prettier-ignore
     if (!doc) return res.status(200).json({ message: error, data: null, success: false })
     // prettier-ignore
     res.status(200).json({ message: 'Client Information ', data: doc, success: true })
   } catch (error) {
     // prettier-ignore
-    res.status(200).json({message: error,success: false,})
+    res.status(200).json({ message: error, success: false, })
   }
 };
 
@@ -295,7 +308,7 @@ const uploadManifest = async (req, res) => {
     const file = req.file;
     const client = req.body.clientId;
 
-    const filePath = file.path;
+    const filePath = makeRelative(file.path);
     const fileName = file.originalname;
 
     const newManifest = new Manifest({
@@ -355,13 +368,11 @@ const getAllManifest = async (req, res) => {
       .skip(skip)
       .limit(pageSize);
 
-    // Check if there are no manifest documents
-    if (!manifest || manifest.length === 0) {
-      return res.status(200).json({
-        message: "No manifest found",
-        success: true,
-      });
-    }
+    const mappedManifests = manifest.map((m) => {
+      const doc = m.toObject ? m.toObject() : JSON.parse(JSON.stringify(m));
+      doc.filePath = makeRelative(doc.filePath);
+      return doc;
+    });
 
     // Count total number of manifest documents (for pagination)
     const totalManifests = await Manifest.countDocuments(filter);
@@ -369,7 +380,7 @@ const getAllManifest = async (req, res) => {
     // Return the list of manifest documents
     res.status(200).json({
       message: "Manifest retrieved successfully",
-      data: manifest,
+      data: mappedManifests,
       success: true,
       currentPage: pageNumber,
       totalManifests,
@@ -426,7 +437,7 @@ const uploadLabels = async (req, res) => {
     const file = req.file;
     const client = req.body.clientId;
 
-    const filePath = file.path;
+    const filePath = makeRelative(file.path);
     const fileName = file.originalname;
 
     const newLabel = new Label({
@@ -494,13 +505,19 @@ const getAllLabels = async (req, res) => {
       });
     }
 
+    const mappedLabels = labels.map((label) => {
+      const l = label.toObject ? label.toObject() : JSON.parse(JSON.stringify(label));
+      l.filePath = makeRelative(l.filePath);
+      return l;
+    });
+
     // Count total number of label documents (for pagination)
     const totalLabels = await Label.countDocuments(filter);
 
     // Return the list of label documents
     res.status(200).json({
       message: "Labels retrieved successfully",
-      data: labels,
+      data: mappedLabels,
       success: true,
       currentPage: pageNumber,
       totalLabels,
@@ -530,25 +547,55 @@ const downloadLabels = async (req, res) => {
     const labels = label1.filter((o) => o.filePath && o.fileName);
 
     if (labels.length > 0) {
+      const tempFiles = [];
+      let filesAdded = 0;
+
       for (const label of labels) {
         const labelPath = label.filePath;
-        if (fs.existsSync(labelPath)) {
-          mergedPdfPath.push(labelPath);
-        } else {
+        if (!labelPath || !fs.existsSync(labelPath)) {
           console.error(`File not found: ${labelPath}`);
+          continue;
+        }
+
+        const ext = labelPath.toLowerCase();
+        if (ext.endsWith(".pdf")) {
+          try {
+            await merger.add(labelPath);
+            filesAdded++;
+          } catch (err) {
+            console.error(`Failed to add PDF ${labelPath}: ${err.message}`);
+          }
+        } else if (ext.endsWith(".jpg") || ext.endsWith(".jpeg") || ext.endsWith(".png")) {
+          try {
+            const imgTempPath = path.join(process.cwd(), `img-temp-${Date.now()}-${Math.random().toString(36).substring(7)}.pdf`);
+            const doc = new PDFDocument({ margin: 0, size: 'A4' });
+            const stream = fs.createWriteStream(imgTempPath);
+            doc.pipe(stream);
+            doc.image(labelPath, 0, 0, { width: 595.28, height: 841.89 });
+            doc.end();
+
+            await new Promise((resolve, reject) => {
+              stream.on('finish', resolve);
+              stream.on('error', reject);
+            });
+
+            await merger.add(imgTempPath);
+            tempFiles.push(imgTempPath);
+            filesAdded++;
+          } catch (err) {
+            console.error(`Failed to convert and add image ${labelPath}: ${err.message}`);
+          }
         }
       }
 
-      for (const path of mergedPdfPath) {
-        // Check if the file has a PDF extension
-        if (path.toLowerCase().endsWith(".pdf") && fs.existsSync(path)) {
-          await merger.add(path);
-        } else {
-          console.error(`Invalid or non-existent PDF file: ${path}`);
-        }
+      if (filesAdded === 0) {
+        return res.status(400).json({
+          message: "No valid label files found to download",
+          success: false,
+        });
       }
 
-      const tempMergedPdfPath = "labels.pdf";
+      const tempMergedPdfPath = `labels-${Date.now()}.pdf`;
       await merger.save(tempMergedPdfPath);
 
       // Check if the merged PDF file was created successfully
@@ -557,15 +604,17 @@ const downloadLabels = async (req, res) => {
         res.setHeader("Content-Disposition", `attachment; filename=labels.pdf`);
 
         res.sendFile(tempMergedPdfPath, { root: "." }, async (err) => {
+          // Cleanup
+          [tempMergedPdfPath, ...tempFiles].forEach(f => {
+            if (fs.existsSync(f)) fs.unlink(f, (err) => { });
+          });
+
           if (err) {
             console.error("Error sending file:", err);
-            return res
-              .status(500)
-              .json({ message: "Error sending file", success: false });
+            if (!res.headersSent) {
+              return res.status(500).json({ message: "Error sending file", success: false });
+            }
           }
-
-          // Delete the temporary merged PDF file after sending
-          fs.unlinkSync(tempMergedPdfPath);
 
           for (const label of labels) {
             if (label.isDownloaded === false) {
@@ -595,9 +644,6 @@ const downloadLabels = async (req, res) => {
               filter.$and.push({ isLableDownloaded: false });
 
               const pendingOrders = await Order.find(filter);
-              console.log(pendingOrders.length);
-              console.log(pendingOrders);
-
               if (pendingOrders.length > 0) {
                 for (const order of pendingOrders) {
                   order.isLableDownloaded = true;
@@ -610,6 +656,9 @@ const downloadLabels = async (req, res) => {
           }
         });
       } else {
+        tempFiles.forEach(f => {
+          if (fs.existsSync(f)) fs.unlink(f, (err) => { });
+        });
         console.error("Merged PDF file was not created successfully");
         return res.status(500).json({
           message: "Merged PDF file was not created successfully",
@@ -617,9 +666,10 @@ const downloadLabels = async (req, res) => {
         });
       }
     } else {
+
       return res
-        .status(200)
-        .json({ message: "No orders found", success: false });
+        .status(400)
+        .json({ message: "No orders found with valid label files", success: false });
     }
   } catch (error) {
     console.error("Error downloading labels:", error.message);

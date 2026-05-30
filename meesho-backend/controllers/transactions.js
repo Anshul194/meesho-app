@@ -4,6 +4,17 @@ const { Order } = require("../models/order");
 // const Order = require("../models/order");
 const Transaction = require("../models/transaction");
 
+// Helper to make path relative to 'uploads' for storage and response
+const makeRelative = (p) => {
+  if (!p || typeof p !== "string") return p;
+  const parts = p.split(/[\\\/]/);
+  const uploadsIdx = parts.findIndex(part => part.toLowerCase() === "uploads");
+  if (idx !== -1) {
+    return parts.slice(uploadsIdx).join("/");
+  }
+  return p;
+};
+
 const createPaymentRequest = async (req, res) => {
   try {
     let amount_debit, amount_credit, t_status, trans_type, order_id;
@@ -149,12 +160,24 @@ const getAllTransactions = async (req, res) => {
 
     const transactions = await transactionsQuery;
 
+    // Normalize paths in transactions
+    const mappedTransactions = transactions.map((txn) => {
+      const t = txn.toObject ? txn.toObject() : JSON.parse(JSON.stringify(txn));
+      if (t.order) {
+        if (t.order.labelPath) t.order.labelPath = makeRelative(t.order.labelPath);
+        if (t.order.product && t.order.product.filePath) {
+          t.order.product.filePath = makeRelative(t.order.product.filePath);
+        }
+      }
+      return t;
+    });
+
     // Filter transactions by clientId if provided
     if (transactions.length === 0) {
       return res.status(200).json({
         message: "No Transactions found.",
         success: true,
-        transactions,
+        transactions: mappedTransactions,
         totalTransactions,
         currentPage: page,
         totalPages: limit > 0 ? Math.ceil(totalTransactions / limit) : 1,
@@ -165,7 +188,7 @@ const getAllTransactions = async (req, res) => {
     return res.status(200).json({
       message: "Transactions fetched successfully.",
       success: true,
-      transactions,
+      transactions: mappedTransactions,
       totalTransactions,
       currentPage: page,
       totalPages: limit > 0 ? Math.ceil(totalTransactions / limit) : 1,

@@ -6,9 +6,9 @@ const fs = require('fs');
 // Define storage for uploaded files
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.resolve(process.cwd(), 'uploads'); // Use an absolute upload directory
+    const uploadDir = 'uploads'; // Use a relative upload directory
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir); // Create the upload directory if it doesn't exist
+      fs.mkdirSync(uploadDir, { recursive: true }); // Create the upload directory if it doesn't exist
     }
     cb(null, uploadDir);
   },

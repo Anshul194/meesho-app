@@ -471,19 +471,9 @@ export default function Pending() {
       setModalTitle("Generating Labels...");
       handleClickOpen2(); // Open modal so progress bar is visible
 
-      let idsToApi;
-      if (selectAll) {
-        const deselectedIds = orders
-          .filter((order) => !order.selected)
-          .map((order) => order._id);
-        idsToApi = deselectedIds;
-      } else {
-        idsToApi = selectedOrderIds;
-      }
-
       const response = await axios.post(
         `${API_ENDPOINT}/api/v1/orders/downloadLabels`,
-        { ids: idsToApi, selectAll, isLableDownloaded: false },
+        { ids: selectedOrderIds, selectAll: false, isLableDownloaded: false },
         {
           headers: {
             "Content-Type": "application/json",
@@ -500,6 +490,22 @@ export default function Pending() {
       );
 
       if (response.data && response.data instanceof Blob) {
+        if (response.data.type === "application/json") {
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const errorData = JSON.parse(reader.result);
+              showWarning(errorData.message || "Failed to download labels");
+            } catch (e) {
+              showWarning("An error occurred during label generation.");
+            }
+          };
+          reader.readAsText(response.data);
+          handleClose2();
+          setPercentCompleted(0);
+          return;
+        }
+
         const blob = new Blob([response.data], { type: "application/pdf" });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -517,10 +523,27 @@ export default function Pending() {
         handleClose2();
         setPercentCompleted(0);
         setSelectAll(false);
+        showWarning("No data received from server.");
       }
     } catch (error) {
+      console.error("Error downloading labels:", error);
       handleClose2();
       setPercentCompleted(0);
+
+      if (error.response && error.response.data instanceof Blob) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const errorData = JSON.parse(reader.result);
+            showWarning(`❌ ${errorData.message || "Failed to download labels"}`);
+          } catch (e) {
+            showWarning("❌ Error: Valid labels not found or server error.");
+          }
+        };
+        reader.readAsText(error.response.data);
+      } else {
+        showWarning("❌ Failed to download labels. Please try again.");
+      }
     }
   };
 
@@ -541,20 +564,9 @@ export default function Pending() {
       setPercentCompleted(30);
       handleClickOpen2();
 
-      let idsToApi;
-      if (selectAll) {
-        const selectedOrderIds = orders
-          .filter((order) => !order.selected)
-          .map((order) => order._id);
-
-        idsToApi = selectedOrderIds;
-      } else {
-        idsToApi = selectedOrderIds;
-      }
-
       const response = await axios.post(
         `${API_ENDPOINT}/api/v1/orders/sendToDownloadedLables`,
-        { ids: idsToApi, selectAll },
+        { ids: selectedOrderIds, selectAll: false },
         {
           headers: {
             "Content-Type": "application/json",
@@ -1098,7 +1110,7 @@ export default function Pending() {
 
         <Modal
           open={open2}
-          onClose={() => {}}
+          onClose={() => { }}
           aria-labelledby="modal-modal-title"
           aria-describedby="modal-modal-description"
         >
