@@ -580,7 +580,7 @@ const OrderHistory = () => {
                           order.revisions === 1 &&
                           order.orders.map((item, index) => (
                             <tr key={item._id}>
-                              <td style={{ width: "50px" }}>
+                              <td className="col-action">
                                 <label className="fancy-checkbox">
                                   <input
                                     className="checkbox-tick"
@@ -734,7 +734,7 @@ const OrderHistory = () => {
 
                         {(!order.revisions || order.revisions !== 1) && (
                           <tr>
-                            <td style={{ width: "50px" }}>
+                            <td className="col-action">
                               <label className="fancy-checkbox">
                                 <input
                                   className="checkbox-tick"

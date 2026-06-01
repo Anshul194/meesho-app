@@ -819,7 +819,7 @@ export default function Pending() {
                               {index === 0 && (
                                 <td
                                   rowSpan={order.orders.length}
-                                  style={{ width: "50px" }}
+                                  className="col-action"
                                 >
                                   <label className="fancy-checkbox">
                                     <input
@@ -918,7 +918,7 @@ export default function Pending() {
 
                         {(!order.revisions || order.revisions !== 1) && (
                           <tr>
-                            <td style={{ width: "50px" }}>
+                            <td className="col-action">
                               <label className="fancy-checkbox">
                                 <input
                                   className="checkbox-tick"
@@ -1034,23 +1034,7 @@ export default function Pending() {
               </MUISelect>
             </div>
           </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "end",
-              alignItems: "center",
-              gap: "20px",
-              marginTop: "10px",
-              position: "fixed",
-              bottom: "0px",
-              left: "0px",
-              right: "0px",
-              background:
-                "linear-gradient(90deg, hsla(213, 62%, 45%, 1) 0%, hsla(0, 0%, 96%, 1) 0%, hsla(203, 89%, 71%, 1) 100%)",
-              padding: "10px 10px 10px 10px",
-              borderRadius: "10px",
-            }}
-          >
+          <div className="page-actions-bar">
             <div
               style={{
                 fontSize: "18px",
@@ -1120,7 +1104,7 @@ export default function Pending() {
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              width: "50%",
+              width: "min(90vw, 640px)",
               bgcolor: "background.paper",
               border: "2px solid #fff !important",
               boxShadow: 24,
@@ -1168,7 +1152,7 @@ export default function Pending() {
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              width: "400px",
+              width: "min(90vw, 400px)",
               bgcolor: "background.paper",
               border: "none",
               borderRadius: "12px",

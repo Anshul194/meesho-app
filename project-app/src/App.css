@@ -2212,6 +2212,50 @@ ol {
   }
 
   @media screen and (max-width: 768px) {
+    .navbar-fixed-top {
+      left: 0 !important;
+      width: 100% !important;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .navbar-fixed-top .navbar-brand a {
+      font-size: 18px;
+    }
+
+    .sidebar {
+      left: -100% !important;
+      width: 280px;
+      max-width: 88vw;
+    }
+
+    .sidebar.open,
+    .offcanvas-active .sidebar {
+      left: 0 !important;
+    }
+
+    #main-content,
+    .right_icon_toggle #main-content,
+    .layout-fullwidth #wrapper #main-content,
+    .right_icon_toggle.layout-fullwidth #main-content {
+      width: 100% !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+
+    .right_icon_bar {
+      display: none;
+    }
+
+    .auth-box {
+      width: 100%;
+      margin-left: 0;
+    }
+
+    .auth-main::before {
+      width: 100%;
+    }
+
     footer {
       position: relative;
       text-align: center

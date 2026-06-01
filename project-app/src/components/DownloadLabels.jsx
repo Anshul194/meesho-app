@@ -46,6 +46,29 @@ export default function DownloadLabels() {
     setOpen(true);
   };
 
+  const selectStyles = {
+    container: (base) => ({
+      ...base,
+      width: "100%",
+      minWidth: 0,
+    }),
+    control: (base) => ({
+      ...base,
+      width: "100%",
+      minHeight: 42,
+      flexWrap: "nowrap",
+    }),
+    valueContainer: (base) => ({
+      ...base,
+      minWidth: 0,
+      overflow: "hidden",
+    }),
+    singleValue: (base) => ({
+      ...base,
+      maxWidth: "100%",
+    }),
+  };
+
   const handleClose = (event, reason) => {
     if (reason === "clickaway") {
       return;
@@ -249,13 +272,15 @@ export default function DownloadLabels() {
   };
 
   return (
-    <div id="main-content">
-      <div className="container-fluid">
+    <div id="main-content" className="labels-page">
+      <div className="container-fluid labels-page__inner">
         <div className="card">
           <div className="header">
-            <div className="row">
-              <div className="col-sm-6">
+            <div className="row labels-page__row">
+              <div className="col-12 col-md-6">
                 <Select
+                  className="labels-select"
+                  styles={selectStyles}
                   options={clients.map((client) => ({
                     value: client._id,
                     label: client.clientName,
@@ -267,8 +292,10 @@ export default function DownloadLabels() {
                   placeholder="Select a client..."
                 />
               </div>
-              <div className="col-sm-4">
+              <div className="col-12 col-md-4">
                 <Select
+                  className="labels-select"
+                  styles={selectStyles}
                   options={marketPlaceOptions}
                   isClearable
                   value={marketPlace ? { value: marketPlace, label: marketPlace } : null}
@@ -281,10 +308,10 @@ export default function DownloadLabels() {
               </div>
             </div>
 
-            <div className="row" style={{ padding: "8px 15px 0px 15px" }}>
+            <div className="row labels-page__row" style={{ padding: "8px 15px 0px 15px" }}>
               {selectedClient && clients.length > 0 && (
                 <div
-                  className="col-sm-12"
+                  className="col-12"
                   style={{
                     backgroundColor: "#f2f3f4",
                     color: "#000",
@@ -307,8 +334,8 @@ export default function DownloadLabels() {
               )}
             </div>
 
-            <div className="row">
-              <div className="col-sm-4">
+            <div className="row labels-page__row">
+              <div className="col-12 col-md-4">
                 <label>Start Date</label>
                 <input
                   className="form-control "
@@ -320,7 +347,7 @@ export default function DownloadLabels() {
                 />
               </div>
 
-              <div className="col-sm-4">
+              <div className="col-12 col-md-4">
                 <label>End Date</label>
                 <input
                   className="form-control"
@@ -339,7 +366,7 @@ export default function DownloadLabels() {
                   marginTop: "30px",
                   alignItems: "center",
                 }}
-                className="col-sm-2"
+                className="col-12 col-md-2 labels-page__filters"
               >
                 <button
                   className=" "
@@ -405,7 +432,7 @@ export default function DownloadLabels() {
                   {manifests &&
                     manifests.map((manifest) => (
                       <tr key={manifest._id}>
-                        <td style={{ width: "50px" }}>
+                        <td className="col-action">
                           <label className="fancy-checkbox">
                             <input
                               className="checkbox-tick"
@@ -451,23 +478,7 @@ export default function DownloadLabels() {
               </table>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "end",
-                alignItems: "center",
-                gap: "20px",
-                marginTop: "10px",
-                position: "fixed",
-                bottom: "0px",
-                left: "0px",
-                right: "0px",
-                background:
-                  "linear-gradient(90deg, hsla(213, 62%, 45%, 1) 0%, hsla(0, 0%, 96%, 1) 0%, hsla(203, 89%, 71%, 1) 100%)",
-                padding: "10px 10px 10px 10px",
-                borderRadius: "10px",
-              }}
-            >
+            <div className="labels-actions">
               <div
                 style={{
                   fontSize: "18px",
@@ -500,6 +511,7 @@ export default function DownloadLabels() {
                 gap: "20px",
                 marginTop: "10px",
               }}
+              className="labels-pagination"
             >
               <Pagination
                 count={Math.ceil(totalDocs / rowsPerPage)}

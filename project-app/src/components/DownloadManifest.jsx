@@ -397,7 +397,7 @@ export default function Dmani() {
                   {manifests &&
                     manifests.map((manifest) => (
                       <tr key={manifest._id}>
-                        <td style={{ width: "50px" }}>
+                        <td className="col-action">
                           <label className="fancy-checkbox">
                             <input
                               className="checkbox-tick"
@@ -443,23 +443,7 @@ export default function Dmani() {
               </table>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "end",
-                alignItems: "center",
-                gap: "20px",
-                marginTop: "10px",
-                position: "fixed",
-                bottom: "0px",
-                left: "0px",
-                right: "0px",
-                background:
-                  "linear-gradient(90deg, hsla(213, 62%, 45%, 1) 0%, hsla(0, 0%, 96%, 1) 0%, hsla(203, 89%, 71%, 1) 100%)",
-                padding: "10px 10px 10px 10px",
-                borderRadius: "10px",
-              }}
-            >
+            <div className="page-actions-bar">
               <div
                 style={{
                   fontSize: "18px",
