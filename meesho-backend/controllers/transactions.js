@@ -9,7 +9,7 @@ const makeRelative = (p) => {
   if (!p || typeof p !== "string") return p;
   const parts = p.split(/[\\\/]/);
   const uploadsIdx = parts.findIndex(part => part.toLowerCase() === "uploads");
-  if (idx !== -1) {
+  if (uploadsIdx !== -1) {
     return parts.slice(uploadsIdx).join("/");
   }
   return p;
@@ -17,7 +17,7 @@ const makeRelative = (p) => {
 
 const createPaymentRequest = async (req, res) => {
   try {
-    let amount_debit, amount_credit, t_status, trans_type, order_id;
+    let amount_debit, amount_credit, t_status, trans_type, order_id, t_remarks, paymentStatus;
 
     const { transactionNumber, amount, clientId, t_type } = req.body;
 
@@ -50,7 +50,7 @@ const createPaymentRequest = async (req, res) => {
       amountDebit: amount_debit,
       amountCredit: amount_credit,
       amount: amount,
-      screenshot: req.file.filename,
+      screenshot: req.file ? req.file.filename : "",
       status: t_status,
       client: clientId,
       order: order_id,
@@ -150,7 +150,7 @@ const getAllTransactions = async (req, res) => {
     console.log("Filter: ", JSON.stringify(filter), "Limit:", limit, "Skip:", skip);
 
     let transactionsQuery = Transaction.find(filter).populate("client").skip(skip).limit(limit);
-    
+
     if (limit > 0) {
       transactionsQuery = transactionsQuery.sort({ _id: -1 });
     }
